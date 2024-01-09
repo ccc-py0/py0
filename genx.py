@@ -89,6 +89,7 @@ class GenX:
 
 	def PARAMS(self, n):
 		params = n['params']
+		if len(params) == 0: return
 		for param in params[0:-1]:
 			self.gen(param)
 			self.emit(',')

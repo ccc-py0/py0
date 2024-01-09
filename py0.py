@@ -9,10 +9,10 @@ match op:
     case 'convert':
         toCode = convertFile(iFile, toLang)
         print(toCode)
-    case 'run':
-        toCode = convertFile(iFile, toLang)
+    # case 'run':
+        # toCode = convertFile(iFile, toLang)
         # eval(toCode)
-        run(oFile, toLang)
+        # run(oFile, toLang)
 
 
 print('finished!')

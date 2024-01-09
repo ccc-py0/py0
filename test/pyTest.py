@@ -1,5 +1,5 @@
 import sys
-sys.path.append('sys0')
+sys.path.append('../sys0')
 from sys0 import *
 
 print('hello', 5)

@@ -1,7 +1,9 @@
 from parser0 import parse
 from genpy import GenPy
 from genjs import GenJs
-langGen = {'py':GenPy,'js':GenJs}
+from genc import GenC
+
+langGen = {'py':GenPy,'js':GenJs,'c':GenC}
 
 def convert(code, lang):
     ast = parse(code)
@@ -20,6 +22,8 @@ def convertFile(pyFile, lang):
             toCode = toCode
         case 'py':
             toCode = 'import sys\nsys.path.append("sys0")\n'+toCode
+        case 'c':
+            toCode = toCode
     with open(toFile, 'w', encoding='utf-8') as file:
         file.write(toCode)
     return toCode
