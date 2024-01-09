@@ -1,0 +1,9 @@
+{
+    "imports": {
+      "std/": "https://deno.land/std@0.211.0/",
+      "sys0/": "./sys0/"
+    },
+    "tasks": {
+      "dev": "deno run --watch main.ts"
+    }
+}

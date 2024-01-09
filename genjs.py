@@ -1,22 +1,24 @@
 from lib0 import *
 from parser0 import parse
 from genx import GenX
-from gen import gen
 
 class GenJs(GenX):
+	def IMPORT(self, n):
+		id = n['id']
+		self.emit(f'import * as {id} from "{id}/{id}.js"')
+
 	def FOR(self, n):
-		emit('for (let ')
-		emit(n['id'])
-		emit(' in ')
-		gen(n['expr'], self)
-		emit(')')
-		gen(n['stmt'], self)
+		self.emit('for (')
+		self.gen(n['var'])
+		self.emit(' of ')
+		self.gen(n['expr'])
+		self.emit(')')
+		self.gen(n['stmt'])
 
-
-# 測試詞彙掃描器
-if __name__ == "__main__":
-	from test0 import code
-	ast = parse(code)
-	print(ast)
-	g = GenJs()
-	gen(ast, g)
+	def BEXPR(self, n):
+		jsOp = {'and':'&&', 'or':'||'}
+		for e in n['list']:
+			if isinstance(e, str): # op
+				self.emit(f' {jsOp[e]} ')
+			else:
+				self.gen(e)

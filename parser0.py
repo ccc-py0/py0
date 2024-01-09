@@ -1,20 +1,35 @@
+import sys
 from lib0 import *
 from lexer0 import lex
 
 tokens = None
-ti = 0
+lines = None
+file = None
+ti = None
+
+def parseFile(fname):
+	with open(fname, 'r', encoding='utf-8') as f:
+		code = f.read()
+	return parse(code, fname)
+
+# prog = stmts
+def parse(code, fname='<unknown file>'):
+	global tokens, ti, lines, file
+	file = fname
+	lines = code.split('\n')
+	lines = ['']+lines
+	tokens = lex(code)
+	ti = 0
+	return STMTS()
+
+def perror(msg):
+	tk = getTk()
+	print(f'line {tk.line}\n{lines[tk.line]}\n{msg}')
+	sys.exit(1)
 
 def back():
 	global ti
 	ti -= 1
-
-# prog = stmts
-def parse(code):
-	global tokens, ti
-	tokens = lex(code)
-	# print('tokens=', tokens)
-	ti = 0
-	return STMTS()
 
 def isNextT(type):
 	global tokens, ti
@@ -45,13 +60,14 @@ def getTk():
 
 def nextT(type):
 	global tokens, ti
+	if isEnd(): return False
 	tk = tokens[ti]
 	if isNextT(type):
 		debug('tk = ', tk)
 		ti += 1
 		return tk.value
 	else:
-		error(f'在第 {tk.line} 行第 {tk.column} 個字有錯，應該是 {type} 但卻遇到 {tk.type}')
+		perror(f'next should be {type}')
 
 def next(value=None):
 	global tokens, ti
@@ -61,7 +77,7 @@ def next(value=None):
 		ti += 1
 		return tk.value
 	else:
-		error(f'在第 {tk.line} 行第 {tk.column} 個字有錯，應該是 {value} 但卻遇到 {tk.value}')
+		perror(f'parse:next error!')
 
 # STMTS = STMT*
 def STMTS():
@@ -78,9 +94,11 @@ def STMTS():
 
 def STMT():
 	s = None
-	print('STMT(): tk=', tokens[ti])
+	# print('STMT(): tk=', tokens[ti])
 	if isNextT("BEGIN"):
 		s = BLOCK()
+	elif isNext("import"):
+		s = IMPORT()
 	elif isNext("def"):
 		s = FUNC()
 	elif isNext("if"):
@@ -94,13 +112,30 @@ def STMT():
 	elif isNextT("ID"):
 		id = next()
 		if isNext("="):
-			s = ASSIGN(id)
+			back()
+			s = ASSIGN()
 		else:
 			back()
 			s = TERM()
 	else:
-		error('不是一個陳述！')
+		perror('is not a statemtnt (不是一個陳述！)')
 	return {'type':'stmt', 'stmt':s}
+
+def IMPORT():
+	next('import')
+	id = nextT('ID')
+	return  {'type':'import', 'id':id }
+
+# FUNC = def id(PARAMS): BLOCK
+def FUNC():
+	next('def')
+	id = nextT('ID')
+	next('(')
+	params = PARAMS()
+	next(')')
+	next(':')
+	block = BLOCK()
+	return {'type':'func', 'id':id, 'params':params, 'block':block}
 
 # IF = if expr: stmt (elif stmt)* (else stmt)?
 def IF():
@@ -131,15 +166,15 @@ def WHILE():
 	s = STMT()
 	return {'type':'while', 'expr':e, 'stmt':s}
 
-# FOR = for id in EXPR: STMT
+# FOR = for VAR in EXPR: STMT
 def FOR():
 	next('for')
-	id = nextT('ID')
+	v = VAR()
 	next('in')
 	e = EXPR()
 	next(':')
 	s = STMT()
-	return {'type':'for', 'id':id, 'expr': e, 'stmt':s }
+	return {'type':'for', 'var':v, 'expr': e, 'stmt':s }
 
 # RETURN = return expr 
 def RETURN():
@@ -147,11 +182,12 @@ def RETURN():
 	e = EXPR()
 	return {'type':'return', 'expr':e}
 
-# ASSIGN = id = expr
-def ASSIGN(id):
+# ASSIGN = VAR = EXPR
+def ASSIGN():
+	v = VAR()
 	next('=')
 	e = EXPR()
-	return {'type':'assign', 'id':id, 'expr':e}
+	return {'type':'assign', 'var':v, 'expr':e}
 
 """
 # CALL = f(ARGS)
@@ -161,17 +197,6 @@ def CALL(f):
 	next(')')
 	return {'type':'call', 'f':f, 'args':args}
 """
-
-# FUNC = def id(PARAMS): BLOCK
-def FUNC():
-	next('def')
-	id = nextT('ID')
-	next('(')
-	params = PARAMS()
-	next(')')
-	next(':')
-	block = BLOCK()
-	return {'type':'func', 'id':id, 'params':params, 'block':block}
 
 # PARAMS = PARAM*
 def PARAMS():
@@ -332,10 +357,9 @@ def ARGS():
 			next(',')
 	return {'type':'args', 'args':args}
 
-# bool: True | False
-# num : integer | float
-# str : '...'
-# id  : [a-zA-Z_][a-zA-Z_0-9]*
+def VAR():
+	id = nextT('ID')
+	return {'type':'var', 'id':id}
 
 # 測試詞彙掃描器
 if __name__ == "__main__":

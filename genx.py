@@ -1,91 +1,122 @@
-from gen import gen
 from lib0 import *
+
+class Env:
+	def __init__(self, parent):
+		self.vars = {}
+		self.parent = parent
+
+	def add(self, name, type):
+		self.vars[name] = type
+
+	def findType(self, name):
+		env = self.findEnv(name)
+		if env:
+			return env.var[name]
+		else:
+			return None
+
+	def findEnv(self, name):
+		if name in self.vars:
+			return self
+		elif self.parent:
+			return self.parent.findEnv(name)
+		else:
+			return None
 
 class GenX:
 	def __init__(self):
 		self.level = 0
-
-	def indent(self):
-		return '\t'*self.level
+		self.emits = []
+		self.env = Env(None)
 
 	def STMTS(self, n):
 		for stmt in n['stmts']:
-			gen(stmt, self)
+			self.gen(stmt)
 
 	def STMT(self, n):
 		if n['stmt']['type'] != 'block': # block 也是一種 stmt，但不需要換行，因為裡面的 stmt* 每個都會換
-			emit(f'\n{self.indent()}')
-		gen(n['stmt'], self)
+			self.emit(f'\n{self.indent()}')
+		self.gen(n['stmt'])
+
+	def IMPORT(self, n):
+		self.emit(f'import {n["id"]}')
 
 	def WHILE(self, n):
-		emit('while (')
-		gen(n['expr'], self)
-		emit(')')
-		gen(n['stmt'], self)
+		self.emit('while (')
+		self.gen(n['expr'])
+		self.emit(')')
+		self.gen(n['stmt'])
 
-	def FOR(self, n):
-		emit('for (')
-		emit(n['id'])
-		emit(' in ')
-		gen(n['expr'], self)
-		emit(')')
-		gen(n['stmt'], self)
+	def FOR(self, n): # FOR = for VAR in EXPR: STMT
+		self.emit('for (')
+		self.gen(n['var'])
+		self.emit(' in ')
+		self.gen(n['expr'])
+		self.emit(')')
+		self.gen(n['stmt'])
 
 	def IF(self, n):
-		emit('if (')
-		gen(n['expr'], self)
-		emit(')')
-		gen(n['stmt'], self)
+		self.emit('if (')
+		self.gen(n['expr'])
+		self.emit(')')
+		self.gen(n['stmt'])
 		for el in n['elifList']:
-			emit('else if ')
-			gen(el['expr'], self)
-			gen(el['stmt'], self)
+			self.emit('else if ')
+			self.gen(el['expr'])
+			self.gen(el['stmt'])
 		if n['elseStmt']:
-			emit('else')
-			gen(n['elseStmt'], self)
+			self.emit('else')
+			self.gen(n['elseStmt'])
 
 	def RETURN(self, n):
-		emit('return ')
-		gen(n['expr'], self)
+		self.emit('return ')
+		self.gen(n['expr'])
 
 	def ASSIGN(self, n):
-		emit(f'{n["id"]} = ')
-		gen(n['expr'], self)
+		self.gen(n['var'])
+		self.emit(' = ')
+		self.gen(n['expr'])
+
+	def VAR(self, n, isNew):
+		if isNew: self.emit('var ')
+		self.emit(n["id"])
 
 	def FUNC(self, n):
-		emit(f'function {n["id"]}(')
-		gen(n['params'], self)
-		emit(')')
-		gen(n['block'], self)
+		self.emit(f'function {n["id"]}(')
+		self.gen(n['params'])
+		self.emit(')')
+		self.gen(n['block'])
 
 	def PARAMS(self, n):
 		params = n['params']
 		for param in params[0:-1]:
-			gen(param, self)
-			emit(',')
-		gen(params[-1], self)
+			self.gen(param)
+			self.emit(',')
+		self.gen(params[-1])
 
 	def PARAM(self, n):
-		emit(n['id'])
+		self.emit(n['id'])
 
 	def BLOCK(self, n): # BLOCK  = begin STMTS end
-		emit(' {')
+		self.emit(' {')
 		self.level += 1
-		gen(n['stmts'], self)
+		# print('block:level=', self.level)
+		self.gen(n['stmts'])
+		# print('block:level=', self.level)
 		self.level -= 1
-		emit('\n'+self.indent()+'}')
-		emit('\n')
+		self.emit('\n'+self.indent()+'}')
+		self.emit('\n')
 
 	def EXPR(self, n): # EXPR = BEXPR (if EXPR else EXPR)?
-		gen(n['bexpr'], self)
+		self.gen(n['bexpr'])
 		# (if EXPR else EXPR)? 尚未處理
 
 	def MEXPR(self, n):
 		for e in n['list']:
 			if isinstance(e, str): # op
-				emit(f' {e} ')
+				self.emit(f' {e} ')
 			else:
-				gen(e, self)
+				self.gen(e)
 
 	def CEXPR(self, n):
 		self.MEXPR(n)
@@ -94,53 +125,53 @@ class GenX:
 		self.MEXPR(n)
 
 	def LREXPR(self, n): # LREXPR = ( EXPR )
-		emit('(')
-		gen(n['expr'], self)
-		emit(')')
+		self.emit('(')
+		self.gen(n['expr'])
+		self.emit(')')
 
 	def ARRAY(self, n): # ARRAY = [ (EXPR ,)* EXPR? ]
-		emit('[')
+		self.emit('[')
 		elist = n['list']
 		if len(elist)>0:
 			for expr in elist[0:-1]:
-				gen(expr, self)
-				emit(',')
-			gen(elist[-1], self)
-		emit(']')
+				self.gen(expr)
+				self.emit(',')
+			self.gen(elist[-1])
+		self.emit(']')
 
 	def MAP(self, n):
-		emit('{')
+		self.emit('{')
 		pairs = n['pairs']
 		for pair in pairs[0:-1]:
-			emit(pair['key']+':')
-			gen(pair['value'], self)
-			emit(',')
-		emit(pairs[-1]['key']+':')
-		gen(pairs[-1]['value'], self)
-		emit('}')
+			self.emit(pair['key']+':')
+			self.gen(pair['value'])
+			self.emit(',')
+		self.emit(pairs[-1]['key']+':')
+		self.gen(pairs[-1]['value'])
+		self.emit('}')
 
 	def OBJ(self, n): # OBJ = id | string | int | float | LREXPR
 		if n['type'] == 'lrexpr':
-			gen(n['expr'], self)
+			self.gen(n['expr'])
 		else:
-			emit(n['value'])
+			self.emit(n['value'])
 
 	def TERM(self, n): # TERM   = OBJ ( [EXPR] | . id | (ARGS) )*
 		tlist = n['list']
 		obj = tlist[0]
-		gen(obj['obj'], self)
+		self.gen(obj['obj'])
 		for t in tlist[1:]:
 			op = t['type']
 			if op == 'index':
-				emit('[')
-				gen(t['expr'], self)
-				emit(']')
+				self.emit('[')
+				self.gen(t['expr'])
+				self.emit(']')
 			elif op == 'member':
-				emit('.'+t['id'])
+				self.emit('.'+t['id'])
 			elif op == 'call':
-				emit('(')
-				gen(t['args'], self)
-				emit(')')
+				self.emit('(')
+				self.gen(t['args'])
+				self.emit(')')
 			else:
 				error(f'term: op = {op} 不合法！')
 
@@ -148,19 +179,96 @@ class GenX:
 		args = n['args']
 		if len(args)>0:
 			for arg in args[0:-1]:
-				gen(arg, self)
-				emit(' , ')
-			gen(args[-1], self)
+				self.gen(arg)
+				self.emit(' , ')
+			self.gen(args[-1])
 
 	def FLOAT(self, n):
-		emit(n['value'])
+		self.emit(n['value'])
 
 	def INTEGER(self, n):
-		emit(n['value'])
+		self.emit(n['value'])
 
 	def STRING(self, n):
-		emit(n['value'])
+		self.emit(n['value'])
 
 	def ID(self, n):
-		emit(n['id'])
+		self.emit(n['id'])
 
+	def emit(self, code):
+		self.emits.append(code)
+
+	def indent(self):
+		return '\t'*self.level
+	
+	def emitCode(self):
+		return ''.join(self.emits)
+	
+	def gen(self, n):
+		t = n['type']
+		match t:
+			case 'stmts':
+				self.STMTS(n)
+			case 'stmt':
+				self.STMT(n)
+			case 'import':
+				self.IMPORT(n)
+			case 'while':
+				self.WHILE(n)
+			case 'for':
+				self.FOR(n)
+			case 'if':
+				self.IF(n)
+			case 'return':
+				self.RETURN(n)
+			case 'assign':
+				self.ASSIGN(n)
+			case 'func':
+				# print('func:level=', self.level)
+				self.env = Env(self.env) # 創建新的 Env
+				params = n['params']['params']
+				for param in params:
+					# print('param=', param)
+					self.env.add(param['id'], '?')
+				self.FUNC(n)
+				self.env = self.env.parent # 退出 Env
+			case 'params':
+				self.PARAMS(n)
+			case 'param':
+				self.PARAM(n)
+			case 'block':
+				self.BLOCK(n)
+			case 'expr':
+				self.EXPR(n)
+			case 'mexpr':
+				self.MEXPR(n)
+			case 'cexpr':
+				self.CEXPR(n)
+			case 'bexpr':
+				self.BEXPR(n)
+			case 'lrexpr': 
+				self.LREXPR(n)
+			case 'array':
+				self.ARRAY(n)
+			case 'map':
+				self.MAP(n)
+			case 'obj':
+				self.OBJ(n)
+			case 'term':
+				self.TERM(n)
+			case 'args': 
+				self.ARGS(n)
+			case 'float':
+				self.FLOAT(n)
+			case 'integer':
+				self.INTEGER(n)
+			case 'string':
+				self.STRING(n)
+			case 'id':
+				self.ID(n)
+			case 'var':
+				id = n["id"]
+				isNew = not self.env.findEnv(id)
+				if isNew:
+					self.env.add(id, '?')
+				self.VAR(n, isNew)

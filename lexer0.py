@@ -1,5 +1,6 @@
 from typing import NamedTuple
 import re
+from lib0 import error, debug
 
 class Token(NamedTuple):
 	type: str
@@ -8,7 +9,11 @@ class Token(NamedTuple):
 	column: int
 	level: int
 
+lines = None
+
 def tokenize(code):
+	lines = code.split('\n')
+	lines = ['']+lines
 	keywords = {'def', 'if', 'while', 'for', 'return', 'and', 'or', 'not', 'yield', 'raise', 'continue', 'break'}
 	token_specification = [
 		('STRING',   r'(".*?")|(\'.*?\')'),        # String
@@ -25,39 +30,39 @@ def tokenize(code):
 	line_num = 1
 	line_start = 0
 	level = 0
+	line_level = 0
 	for mo in re.finditer(tok_regex, code):
-		level_now = level
 		kind = mo.lastgroup
 		value = mo.group()
 		column = mo.start() - line_start
-		if kind == 'ID' and value in keywords:
-			kind = value
+		if kind == 'MISMATCH':
+			error(f'{value} unexpected on line {line_num}')
 		elif kind == 'INDENT':
-			hlevel = len(value)-1
-			if tokenize.lastTk and tokenize.lastTk.type in ['BEGIN', 'END', 'INDENT']:
-				continue
-			elif hlevel > level:
+			line_num += 1
+			line_level = len(value)-1
+			if line_level == level+1:
+				level += 1
 				kind = 'BEGIN'
-				level_now = level
-			elif hlevel < level: #  and tokenize.lastTk and not tokenize.lastTk.type in ['BEGIN', 'END', 'INDENT']
+				# print(kind, level)
+			elif line_level == level-1:
 				kind = 'END'
-				level_now = tokenize.lastTk.level - 1
+				# print(kind, level)
+				level -= 1
 			else:
-				kind = 'NEWLINE' # 'INDENT'
-				level_now = hlevel
+				kind = 'INDENT'
+				continue
 				
 			line_start = mo.start() + 1 # mo.end()
-			line_num += 1
-			level = hlevel
-		elif kind == 'SPACE':
-			continue
-		elif kind == 'MISMATCH':
-			raise RuntimeError(f'{value!r} unexpected on line {line_num}')
-		tk = Token(kind, value, line_num, column, level_now)
-		tokenize.lastTk = tk
+		else:
+			if kind == 'SPACE':
+				continue
+			if line_level != level:
+				error(f'line {line_num}, level misatch ...\n{line_num-1}:{lines[line_num-1]}\n{line_num}:{lines[line_num]}')
+			debug('tk:', value)
+			if kind == 'ID' and value in keywords:
+				kind = value
+		tk = Token(kind, value, line_num, column, level)
 		yield tk
-
-tokenize.lastTk = None
 
 def lex(code):
 	tokens = []
@@ -65,6 +70,7 @@ def lex(code):
 		tokens.append(tk)
 	return tokens
 
+"""
 def format(code):
 	words = []
 	for tk in tokenize(code):
@@ -78,12 +84,16 @@ def format(code):
 		else:
 			words.append(tk.value+' ')
 	return ''.join(words)
-
+"""
 
 # 測試詞彙掃描器
 if __name__ == "__main__":
 	from test0 import code
 	tokens = lex(code)
-	print(tokens)
-	fcode = format(code)
-	print(fcode)
+	for t in tokens:
+		if t.type in ['BEGIN', 'END']:
+			print(t.type)
+		else:
+			print(t.value, end=' ')
+	# fcode = format(code)
+	# print(fcode)

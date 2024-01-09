@@ -54,10 +54,3 @@ def gen(n, g):
 			g.STRING(n)
 		case 'id':
 			g.ID(n)
-
-# 測試詞彙掃描器
-if __name__ == "__main__":
-	from test0 import code
-	ast = parse(code)
-	print(ast)
-	gen(ast)

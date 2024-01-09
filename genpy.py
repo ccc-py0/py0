@@ -1,52 +1,47 @@
 from lib0 import *
 from parser0 import parse
 from genx import GenX
-from gen import gen
 
 class GenPy(GenX):
+	def VAR(self, n, isNew):
+		self.emit(n["id"])
+
 	def FUNC(self, n):
-		emit(f'def {n["id"]}(')
-		gen(n['params'], self)
-		emit('):')
-		gen(n['block'], self)
+		self.emit(f'def {n["id"]}(')
+		self.gen(n['params'])
+		self.emit('):')
+		self.gen(n['block'])
 
 	def BLOCK(self, n): # BLOCK  = begin STMTS end
 		self.level += 1
-		gen(n['stmts'], self)
+		self.gen(n['stmts'])
 		self.level -= 1
-		emit('\n')
+		self.emit('\n')
+
 	def IF(self, n):
-		emit('if ')
-		gen(n['expr'], self)
-		emit(':')
-		gen(n['stmt'], self)
+		self.emit('if ')
+		self.gen(n['expr'])
+		self.emit(':')
+		self.gen(n['stmt'])
 		for el in n['elifList']:
-			emit('elif ')
-			gen(el['expr'], self)
-			emit(':')
-			gen(el['stmt'], self)
+			self.emit('elif ')
+			self.gen(el['expr'])
+			self.emit(':')
+			self.gen(el['stmt'])
 		if n['elseStmt']:
-			emit('else:')
-			gen(n['elseStmt'], self)
+			self.emit('else:')
+			self.gen(n['elseStmt'])
 
 	def WHILE(self, n):
-		emit('while ')
-		gen(n['expr'], self)
-		emit(':')
-		gen(n['stmt'], self)
+		self.emit('while ')
+		self.gen(n['expr'])
+		self.emit(':')
+		self.gen(n['stmt'])
 
 	def FOR(self, n):
-		emit('for ')
-		emit(n['id'])
-		emit(' in ')
-		gen(n['expr'], self)
-		emit(' : ')
-		gen(n['stmt'], self)
-
-# 測試詞彙掃描器
-if __name__ == "__main__":
-	from test0 import code
-	ast = parse(code)
-	print(ast)
-	g = GenPy()
-	gen(ast, g)
+		self.emit('for ')
+		self.gen(n['var'])
+		self.emit(' in ')
+		self.gen(n['expr'])
+		self.emit(': ')
+		self.gen(n['stmt'])

@@ -2,12 +2,13 @@
 
 ```
 STMTS  = STMT*                                            # list
-STMT   = BLOCK | FUNC | IF | WHILE | RETURN | ASSIGN | CALL
+STMT   = BLOCK | FUNC | IF | WHILE | RETURN | ASSIGN | CALL | IMPORT
+IMPORT = import id
 IF     = if EXPR: STMT (elif STMT)* (else STMT)?
 WHILE  = while EXPR: STMT
-FOR    = for id in EXPR: STMT
+FOR    = for VAR in EXPR: STMT
 RETURN = return EXPR
-ASSIGN = id = EXPR
+ASSIGN = VAR = EXPR
 CALL   = id(ARGS)
 FUNC   = def id(PARAMS): BLOCK
 PARAMS = PARAM*                                           # list
@@ -27,4 +28,5 @@ ARGS   = (EXPR ,)* EXPR?
 ARRAY  = [ (EXPR ,)* EXPR? ]
 MAP    = { (PAIR ,)* PAIR? }
 PAIR   = string : EXPR
+VAR    = id
 ```
