@@ -1,3 +1,4 @@
+set -x
 python py0.py convert example/test.py0 js
 deno run example/test.js
 
