@@ -29,9 +29,9 @@ class GenC(GenX):
 			self.emit(f'\n{self.indent()}')
 		self.gen(n['stmt'])
 		if not ty in ['block', 'if', 'while', 'func', 'for', 'import']:
-		    self.emit(';')		
+			self.emit(';')		
 		
-	def STRING(self, n):
+	def STR(self, n):
 		self.emit(n['value'].replace("'",'"'))
 
 	def FOR(self, n):

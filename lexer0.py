@@ -51,10 +51,8 @@ def tokenize(code):
 			if line_level == level+1:
 				level += 1
 				kind = 'begin'
-				# print(kind, level)
 			elif line_level == level-1:
 				kind = 'end'
-				# print(kind, level)
 				level -= 1
 			else:
 				kind = 'indent'
@@ -83,22 +81,6 @@ def lexDump(tokens):
 	for i,t in enumerate(tokens):
 		print(f'{i}:{t.value}')
 
-"""
-def format(code):
-	words = []
-	for tk in tokenize(code):
-		tabs = '\t'*tk.level
-		if tk.type == 'BEGIN':
-			words.append('\n'+tabs+'\t')# words.append('\n'+tabs+'begin\n'+tabs+'\t') # 多一個 \t ，因為 begin 後內縮一層
-		elif tk.type == 'END':
-			words.append('\n'+tabs+'\n'+tabs) # words.append('\n'+tabs+'end\n'+tabs)
-		elif tk.type == 'NEWLINE':
-			words.append('\n'+tabs)
-		else:
-			words.append(tk.value+' ')
-	return ''.join(words)
-"""
-
 # 測試詞彙掃描器
 if __name__ == "__main__":
 	from test0 import code
@@ -108,5 +90,4 @@ if __name__ == "__main__":
 			print(t.type)
 		else:
 			print(t.value, end=' ')
-	# fcode = format(code)
-	# print(fcode)
+

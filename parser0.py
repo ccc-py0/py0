@@ -9,11 +9,6 @@ file = None
 ti = None
 env = None
 
-def parseFile(fname):
-	with open(fname, 'r', encoding='utf-8') as f:
-		code = f.read()
-	return parse(code, fname)
-
 # prog = stmts
 def parse(code, fname='<unknown file>'):
 	global tokens, ti, lines, file, env
@@ -96,7 +91,7 @@ def STMTS():
 
 def STMT():
 	s = None
-	print('STMT(): tk=', tokens[ti])
+	# print('STMT(): tk=', tokens[ti])
 	if isNextT("begin"):
 		s = BLOCK()
 	elif isNext("import"):

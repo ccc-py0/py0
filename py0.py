@@ -29,6 +29,7 @@ match op:
                 cmd = f'python {toFile}'
             case 'c':
                 toCode = convert(code, lang, typed=True)
+        print(f'-------------- {toFile} -----------')
         print(toCode)
         lib0.writeTextFile(toFile, toCode)
         if op == 'run':
