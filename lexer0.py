@@ -14,6 +14,9 @@ lines = None
 def tokenize(code):
 	lines = code.split('\n')
 	lines = ['']+lines
+	for i, line in enumerate(lines):
+		if re.search(r"^\t*[ ]+", line):
+			error(f'line {i}\n{line}\nError: 程式每行開頭都不能有空格，只能用 tab (\\t) 開頭')
 	"""
 	keywords = {
 		'def', 'if', 'while', 'for', 'return', 'and', 'or', 'not', 
@@ -71,7 +74,6 @@ def tokenize(code):
 		yield tk
 
 def lex(code):
-	code = code.replace('    ', '\t')
 	tokens = []
 	for tk in tokenize(code):
 		tokens.append(tk)

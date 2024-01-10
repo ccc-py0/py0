@@ -8,7 +8,7 @@ def emit(msg):
 
 def error(msg):
 	print(msg)
-	raise Exception('parse error')
+	raise Exception('Error')
 
 def readTextFile(fname):
 	with open(fname, 'r', encoding='utf-8') as file:
