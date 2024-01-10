@@ -2,7 +2,7 @@ import sys
 sys.path.append("sys0")
 
 import sys0
-def fib(n):
+def fib(n)->int:
 	if n == 0 or n == 1:
 		return 1
 

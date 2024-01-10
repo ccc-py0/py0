@@ -7,6 +7,10 @@ class GenJs(GenX):
 		id = n['id']
 		self.emit(f'import * as {id} from "{id}/{id}.js"')
 
+	def VAR(self, n, isNew):
+		if isNew: self.emit('var ')
+		super().VAR(n, isNew)
+
 	def FOR(self, n):
 		self.emit('for (')
 		self.gen(n['var'])

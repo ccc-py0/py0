@@ -4,15 +4,17 @@ from genx import GenX
 
 class GenPy(GenX):
 	def VAR(self, n, isNew):
-		# if isNew: self.emit('var ')
-		self.emit(n['id'])
+		super().VAR(n, isNew)
 		if self.typed and n['class']:
 			self.emit(':'+n['class'])
 
 	def FUNC(self, n):
 		self.emit(f'def {n["id"]}(')
 		self.gen(n['params'])
-		self.emit('):')
+		if n['class']:
+			self.emit(f')->{n["class"]}:')
+		else:
+			self.emit(f'):')
 		self.gen(n['block'])
 
 	def BLOCK(self, n): # BLOCK  = begin STMTS end

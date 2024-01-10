@@ -57,9 +57,9 @@ class GenX:
 		self.gen(n['expr'])
 
 	def VAR(self, n, isNew):
-		if isNew: self.emit('var ')
+		# if isNew: self.emit('var ')
 		self.emit(n['id'])
-		if self.typed: self.emit(':'+n['class'])
+		# if self.typed: self.emit(':'+n['class'])
 
 	def FUNC(self, n):
 		self.emit(f'function {n["id"]}(')

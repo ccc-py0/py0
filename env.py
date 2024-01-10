@@ -1,7 +1,10 @@
+import json
+
 class Env:
-	def __init__(self, parent):
+	def __init__(self, parent, returnClass=None):
 		self.vars = {}
 		self.parent = parent
+		self.returnClass = returnClass
 
 	def add(self, name, type):
 		self.vars[name] = type
@@ -20,4 +23,7 @@ class Env:
 			return self.parent.findEnv(name)
 		else:
 			return None
+		
+	def __repr__(self):
+		return f'env:returnClass={self.returnClass}\nvars={json.dumps(self.vars)}'
 

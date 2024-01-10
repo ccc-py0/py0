@@ -2,6 +2,7 @@ import sys
 from lib0 import *
 from lexer0 import lex
 from env import Env
+import json
 
 tokens = None
 lines = None
@@ -23,7 +24,6 @@ def parse(code, fname='<unknown file>'):
 def perror(msg):
 	tk = getTk()
 	print(f'line {tk.line}\n{lines[tk.line]}\n{msg}')
-	# sys.exit(1)
 	raise Exception('perror')
 
 def back():
@@ -127,6 +127,7 @@ def IMPORT():
 def FUNC():
 	global env
 	fenv = Env(env)
+	env = fenv
 	next('def')
 	id = nextT('id')
 	env.add(id, 'func')
@@ -135,8 +136,9 @@ def FUNC():
 	next(')')
 	next(':')
 	block = BLOCK()
-	env = fenv
-	return {'type':'func', 'class':'func', 'id':id, 'params':params, 'block':block}
+	env = env.parent
+	print('parser:FUNC:fenv=', fenv)
+	return {'type':'func', 'class':fenv.returnClass, 'id':id, 'params':params, 'block':block}
 
 # IF = if expr: stmt (elif stmt)* (else stmt)?
 def IF():
@@ -181,6 +183,9 @@ def FOR():
 def RETURN():
 	next('return')
 	e = EXPR()
+	if not env.returnClass:
+		env.returnClass = e['class']
+		print('RETURN():env=', env)
 	return {'type':'return', 'expr':e}
 
 # ASSIGN = VAR = EXPR
@@ -317,6 +322,7 @@ def FACTOR():
 # TERM   = OBJ ( [EXPR] | . id | (ARGS) )*
 def TERM():
 	obj = OBJ()
+	termClass = obj['class']
 	tlist = [obj]
 	while isNextSet(['(', '.', '[']):
 		if isNext('('):
@@ -324,16 +330,19 @@ def TERM():
 			args = ARGS()
 			next(')')
 			tlist.append({'type':'call', 'args':args})
+			termClass = None
 		elif isNext('['):
 			next('[')
 			e = EXPR()
 			next(']')
 			tlist.append({'type':'index', 'expr':e})
+			termClass = None
 		elif isNext('.'): # member
 			next('.')
 			id = nextT('id')
 			tlist.append({'type':'member', 'id':id})
-	return  {'type':'term', 'class':obj['class'], 'list':tlist}
+			termClass = None
+	return  {'type':'term', 'class':termClass, 'list':tlist}
 
 # OBJ = id | string | integer | float | LREXPR
 # LREXPR = ( expr )
@@ -374,6 +383,7 @@ def VAR():
 	id = nextT('id')
 	return {'type':'var', 'class':env.findClass(id), 'id':id}
 
+"""
 def nodeDump(node, level):
 	if not isinstance(node, dict):
 		print(f'{"  "*level}{node}')
@@ -388,9 +398,11 @@ def nodeDump(node, level):
 		else:
 			print(f'{"  "*level}{k}:')
 			nodeDump(v, level+1)
+"""
 
 def astDump(ast):
-	nodeDump(ast, 0)
+	print(json.dumps(ast, indent=2))
+	# nodeDump(ast, 0)
 
 # 測試詞彙掃描器
 if __name__ == "__main__":

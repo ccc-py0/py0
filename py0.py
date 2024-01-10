@@ -7,6 +7,7 @@ from parser0 import *
 
 def excepthook(type, value, traceback):
     print(value)
+    traceback()
 
 sys.excepthook = excepthook
 
