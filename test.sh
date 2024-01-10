@@ -1,6 +1,15 @@
 set -x
 
-python py0.py convert example/fib.py0 c
+# python py0.py run example/mt.py0 py
+python py0.py run example/mt.py0 js
+
+# python py0.py convert example/assign.py0 py
+# python py0.py parse example/assign.py0 py
+# python py0.py convert example/assign.py0 py
+# python py0.py convert example/fib.py0 py
+# python example/fib.py
+
+# python py0.py convert example/fib.py0 c
 # 應該是有 main 就跑 main() ，沒 main 就當函式庫
 # 反正我們主程式本來就想在 python 裡跑。
 
@@ -18,8 +27,6 @@ python py0.py convert example/fib.py0 c
 
 # python py0.py convert example/fib.py0 js
 # deno run example/fib.js
-# python py0.py convert example/fib.py0 py
-# python example/fib.py
 
 # python py0.py convert example/mt.py0 js
 # deno run example/mt.js

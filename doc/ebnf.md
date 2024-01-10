@@ -26,7 +26,7 @@ OBJ    = id | string | int | float | LREXPR
 CALL   = id(ARGS)
 ARGS   = (EXPR ,)* EXPR?
 ARRAY  = [ (EXPR ,)* EXPR? ]
-MAP    = { (PAIR ,)* PAIR? }
+DICT   = { (PAIR ,)* PAIR? }
 PAIR   = string : EXPR
 VAR    = id
 ```

@@ -1,33 +1,12 @@
 from lib0 import *
-
-class Env:
-	def __init__(self, parent):
-		self.vars = {}
-		self.parent = parent
-
-	def add(self, name, type):
-		self.vars[name] = type
-
-	def findType(self, name):
-		env = self.findEnv(name)
-		if env:
-			return env.var[name]
-		else:
-			return None
-
-	def findEnv(self, name):
-		if name in self.vars:
-			return self
-		elif self.parent:
-			return self.parent.findEnv(name)
-		else:
-			return None
+from env import Env
 
 class GenX:
-	def __init__(self):
+	def __init__(self, typed=False):
 		self.level = 0
 		self.emits = []
 		self.env = Env(None)
+		self.typed = typed
 
 	def STMTS(self, n):
 		for stmt in n['stmts']:
@@ -79,7 +58,8 @@ class GenX:
 
 	def VAR(self, n, isNew):
 		if isNew: self.emit('var ')
-		self.emit(n["id"])
+		self.emit(n['id'])
+		if self.typed: self.emit(':'+n['class'])
 
 	def FUNC(self, n):
 		self.emit(f'function {n["id"]}(')
@@ -130,7 +110,7 @@ class GenX:
 		self.gen(n['expr'])
 		self.emit(')')
 
-	def ARRAY(self, n): # ARRAY = [ (EXPR ,)* EXPR? ]
+	def LIST(self, n): # LIST = [ (EXPR ,)* EXPR? ]
 		self.emit('[')
 		elist = n['list']
 		if len(elist)>0:
@@ -140,7 +120,7 @@ class GenX:
 			self.gen(elist[-1])
 		self.emit(']')
 
-	def MAP(self, n):
+	def DICT(self, n):
 		self.emit('{')
 		pairs = n['pairs']
 		for pair in pairs[0:-1]:
@@ -187,10 +167,10 @@ class GenX:
 	def FLOAT(self, n):
 		self.emit(n['value'])
 
-	def INTEGER(self, n):
+	def INT(self, n):
 		self.emit(n['value'])
 
-	def STRING(self, n):
+	def STR(self, n):
 		self.emit(n['value'])
 
 	def ID(self, n):
@@ -249,10 +229,10 @@ class GenX:
 				self.BEXPR(n)
 			case 'lrexpr': 
 				self.LREXPR(n)
-			case 'array':
-				self.ARRAY(n)
-			case 'map':
-				self.MAP(n)
+			case 'list':
+				self.LIST(n)
+			case 'dict':
+				self.DICT(n)
 			case 'obj':
 				self.OBJ(n)
 			case 'term':
@@ -261,10 +241,10 @@ class GenX:
 				self.ARGS(n)
 			case 'float':
 				self.FLOAT(n)
-			case 'integer':
-				self.INTEGER(n)
-			case 'string':
-				self.STRING(n)
+			case 'int':
+				self.INT(n)
+			case 'str':
+				self.STR(n)
 			case 'id':
 				self.ID(n)
 			case 'var':

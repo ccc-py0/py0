@@ -1,11 +1,13 @@
 import sys
 from lib0 import *
 from lexer0 import lex
+from env import Env
 
 tokens = None
 lines = None
 file = None
 ti = None
+env = None
 
 def parseFile(fname):
 	with open(fname, 'r', encoding='utf-8') as f:
@@ -14,18 +16,20 @@ def parseFile(fname):
 
 # prog = stmts
 def parse(code, fname='<unknown file>'):
-	global tokens, ti, lines, file
+	global tokens, ti, lines, file, env
 	file = fname
 	lines = code.split('\n')
 	lines = ['']+lines
 	tokens = lex(code)
 	ti = 0
+	env = Env(None)
 	return STMTS()
 
 def perror(msg):
 	tk = getTk()
 	print(f'line {tk.line}\n{lines[tk.line]}\n{msg}')
-	sys.exit(1)
+	# sys.exit(1)
+	raise Exception('perror')
 
 def back():
 	global ti
@@ -83,9 +87,7 @@ def next(value=None):
 def STMTS():
 	global ti
 	stmts = []
-	while not isEnd() and not isNextT('END'):
-		while isNextT('NEWLINE'): next()
-		if isEnd(): break
+	while not isEnd() and not isNextT('end'):
 		s = STMT()
 		stmts.append(s)
 	return {'type':'stmts', 'stmts':stmts}
@@ -94,8 +96,8 @@ def STMTS():
 
 def STMT():
 	s = None
-	# print('STMT(): tk=', tokens[ti])
-	if isNextT("BEGIN"):
+	print('STMT(): tk=', tokens[ti])
+	if isNextT("begin"):
 		s = BLOCK()
 	elif isNext("import"):
 		s = IMPORT()
@@ -109,7 +111,7 @@ def STMT():
 		s = FOR()
 	elif isNext("return"):
 		s = RETURN()
-	elif isNextT("ID"):
+	elif isNextT("id"):
 		id = next()
 		if isNext("="):
 			back()
@@ -118,24 +120,28 @@ def STMT():
 			back()
 			s = TERM()
 	else:
-		perror('is not a statemtnt (不是一個陳述！)')
+		perror('is not a statement (不是一個陳述！)')
 	return {'type':'stmt', 'stmt':s}
 
 def IMPORT():
 	next('import')
-	id = nextT('ID')
+	id = nextT('id')
 	return  {'type':'import', 'id':id }
 
 # FUNC = def id(PARAMS): BLOCK
 def FUNC():
+	global env
+	fenv = Env(env)
 	next('def')
-	id = nextT('ID')
+	id = nextT('id')
+	env.add(id, 'func')
 	next('(')
 	params = PARAMS()
 	next(')')
 	next(':')
 	block = BLOCK()
-	return {'type':'func', 'id':id, 'params':params, 'block':block}
+	env = fenv
+	return {'type':'func', 'class':'func', 'id':id, 'params':params, 'block':block}
 
 # IF = if expr: stmt (elif stmt)* (else stmt)?
 def IF():
@@ -184,19 +190,18 @@ def RETURN():
 
 # ASSIGN = VAR = EXPR
 def ASSIGN():
+	global env
 	v = VAR()
 	next('=')
 	e = EXPR()
-	return {'type':'assign', 'var':v, 'expr':e}
 
-"""
-# CALL = f(ARGS)
-def CALL(f):
-	next('(')
-	args = ARGS()
-	next(')')
-	return {'type':'call', 'f':f, 'args':args}
-"""
+	vClass = env.findClass(v['id'])
+	if vClass:
+		v['class']=vClass
+	else:
+		v['class'] = e['class']
+
+	return {'type':'assign', 'var':v, 'expr':e}
 
 # PARAMS = PARAM*
 def PARAMS():
@@ -208,20 +213,32 @@ def PARAMS():
 
 # PARAM = id
 def PARAM():
-	id = nextT("ID")
+	id = nextT('id')
 	return {'type':'param', 'id':id}
+
+"""
+# TYPE = id
+def TYPE():
+	ty = nextT('id')
+	return {'type':'type', 'class':ty}
+"""
 
 level = 0
 # BLOCK = begin STMTS end
 def BLOCK():
-	nextT('BEGIN')
+	nextT('begin')
 	s = STMTS()
-	nextT('END')
+	nextT('end')
 	return {'type':'block', 'stmts':s }
 
 # EXPR = BEXPR (if EXPR else EXPR)?
 def EXPR():
 	bexpr = BEXPR()
+	"""
+	這段不能加，否則像是 
+		msg = 'a<5'
+		if a < 5: print(msg)
+	這樣的程式，就會被誤認然後發生解析錯誤了。 真正的 python 不會
 	if isNext('if'):
 		next('if')
 		expr1 = EXPR()
@@ -229,7 +246,8 @@ def EXPR():
 		expr2 = EXPR()
 		return {'type':'expr', 'bexpr':bexpr, 'expr1':expr1, 'expr2':expr2 }
 	else:
-		return bexpr
+	"""
+	return bexpr
 
 # BEXPR = CEXPR ((and|or) CEXPR)*
 def BEXPR():
@@ -239,7 +257,7 @@ def BEXPR():
 		op = next()
 		e = CEXPR()
 		elist.extend([op, e])
-	return e if len(elist)==1 else {'type':'bexpr', 'list':elist}
+	return e if len(elist)==1 else {'type':'bexpr', 'class':'bool', 'list':elist}
 
 # CEXPR = MEXPR (['==', '!=', '<=', '>=', '<', '>'] MEXPR)*
 def CEXPR():
@@ -249,7 +267,7 @@ def CEXPR():
 		op = next()
 		e = MEXPR()
 		elist.extend([op, e])
-	return e if len(elist)==1 else {'type':'cexpr', 'list':elist}
+	return e if len(elist)==1 else {'type':'cexpr', 'class':'bool', 'list':elist}
 
 # MEXPR = ITEM (['+', '-', '*', '/', '%'] ITEM)*
 def MEXPR():
@@ -259,20 +277,20 @@ def MEXPR():
 		op = next()
 		e = ITEM()
 		elist.extend([op,e])
-	return e if len(elist)==1 else {'type':'mexpr', 'list':elist}
+	return e if len(elist)==1 else {'type':'mexpr', 'class': e['class'], 'list':elist}
 
-# ITEM = ARRAY | MAP | FACTOR
+# ITEM = LIST | DICT | FACTOR
 def ITEM():
 	if isNext('['):
-		e = ARRAY()
+		e = LIST()
 	elif isNext('{'):
-		e = MAP()
+		e = DICT()
 	else:
 		e = FACTOR()
 	return e
 
-# ARRAY  = [ (EXPR ,)* EXPR? ]
-def ARRAY():
+# LIST  = [ (EXPR ,)* EXPR? ]
+def LIST():
 	next('[')
 	elist = []
 	while not isNext(']'):
@@ -281,20 +299,20 @@ def ARRAY():
 		if not isNext(']'):
 			next(',')
 	next(']')
-	return {'type':'array', 'list': elist}
+	return {'type':'list', 'class':'list', 'list': elist}
 
-# MAP = { (PAIR ,)* PAIR? }
-def MAP():
+# DICT = { (PAIR ,)* PAIR? }
+def DICT():
 	next('{')
 	pairs = []
 	while not isNext('}'):
-		key = nextT('STRING')
+		key = nextT('str')
 		next(':')
 		value = EXPR()
 		pairs.append({'type':'pair', 'key':key, 'value': value})
 		if not isNext('}'): next(',')
 	next('}')
-	return  {'type':'map', 'pairs':pairs}
+	return  {'type':'dict', 'class':'dict', 'pairs':pairs}
 
 # FACTOR = (!-~)* TERM
 def FACTOR():
@@ -318,30 +336,30 @@ def TERM():
 			tlist.append({'type':'index', 'expr':e})
 		elif isNext('.'): # member
 			next('.')
-			id = nextT('ID')
+			id = nextT('id')
 			tlist.append({'type':'member', 'id':id})
-	return  {'type':'term', 'list':tlist}
+	return  {'type':'term', 'class':obj['class'], 'list':tlist}
 
 # OBJ = id | string | integer | float | LREXPR
 # LREXPR = ( expr )
 def OBJ():
 	obj = None
 	tk = getTk()
-	ty = tk.type.lower()
-	if ty in ['string', 'integer', 'float']:
+	ty = tk.type
+	if ty in ['str', 'int', 'float']:
 		next()
-		obj = {'type':ty, 'value':tk.value}
-	elif isNextT('ID'):
+		obj = {'type':ty, 'class':ty, 'value':tk.value}
+	elif isNextT('id'):
 		id = next()
-		obj = {'type':'id', 'id':id}
+		obj = {'type':'id', 'class':env.findClass(id), 'id':id}
 	elif isNext('('):
 		next('(')
 		e = EXPR()
 		next(')')
-		obj = {'type':'lrexpr', 'expr':e}
+		obj = {'type':'lrexpr', 'class':e['class'], 'expr':e}
 	else:
 		error(f'OBJ:type={ty} 錯誤！')
-	return {'type':'obj', 'obj':obj }
+	return {'type':'obj', 'class':obj['class'], 'obj':obj }
 
 # array = [ expr* ]
 
@@ -358,11 +376,30 @@ def ARGS():
 	return {'type':'args', 'args':args}
 
 def VAR():
-	id = nextT('ID')
-	return {'type':'var', 'id':id}
+	id = nextT('id')
+	return {'type':'var', 'class':env.findClass(id), 'id':id}
+
+def nodeDump(node, level):
+	if not isinstance(node, dict):
+		print(f'{"  "*level}{node}')
+		return
+	
+	for _, (k, v) in enumerate(node.items()):
+		if v==None or isinstance(v, str):
+			print(f'{"  "*level}{k}:{v}')
+		elif isinstance(v, list):
+			for o in v:
+				nodeDump(o, level+1)
+		else:
+			print(f'{"  "*level}{k}:')
+			nodeDump(v, level+1)
+
+def astDump(ast):
+	nodeDump(ast, 0)
 
 # 測試詞彙掃描器
 if __name__ == "__main__":
 	from test0 import code
 	ast = parse(code)
-	print(ast)
+	astDump(ast)
+	# print(ast)

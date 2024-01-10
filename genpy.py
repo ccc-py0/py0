@@ -4,7 +4,10 @@ from genx import GenX
 
 class GenPy(GenX):
 	def VAR(self, n, isNew):
-		self.emit(n["id"])
+		# if isNew: self.emit('var ')
+		self.emit(n['id'])
+		if self.typed and n['class']:
+			self.emit(':'+n['class'])
 
 	def FUNC(self, n):
 		self.emit(f'def {n["id"]}(')

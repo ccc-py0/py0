@@ -1,26 +1,38 @@
 import os
 import sys
-from converter import convertFile
+from converter import convert
+import lib0
+from lexer0 import *
+from parser0 import *
 
 sys.path.append('sys')
 
-op, iFile, toLang = sys.argv[1:4]
+op, file, lang = sys.argv[1:4]
+code = lib0.readTextFile(file)
+toFile = file.replace('.py0', f'.{lang}')
+
 match op:
-    case 'convert':
-        toCode = convertFile(iFile, toLang)
+    case 'lex':
+        tokens = lex(code)
+        lexDump(tokens)
+    case 'parse':
+        ast = parse(code)
+        astDump(ast)
+    case 'convert' | 'run':
+        match lang:
+            case 'js':
+                toCode = convert(code, lang, typed=False)
+                cmd = f'deno run -A {toFile}'
+            case 'py':
+                toCode = convert(code, lang, typed=True)
+                toCode = 'import sys\nsys.path.append("sys0")\n'+toCode
+                cmd = f'python {toFile}'
+            case 'c':
+                toCode = convert(code, lang, typed=True)
         print(toCode)
-    # case 'run':
-        # toCode = convertFile(iFile, toLang)
-        # eval(toCode)
-        # run(oFile, toLang)
-
-
-print('finished!')
-
-"""
-def run(lang):
-    if to
-    os.system(iFile)
-"""
+        lib0.writeTextFile(toFile, toCode)
+        if op == 'run':
+            print('---------- run ---------------')
+            os.system(cmd)
 
 
