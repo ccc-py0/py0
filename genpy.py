@@ -3,15 +3,11 @@ from parser0 import parse
 from genx import GenX
 
 class GenPy(GenX):
-	def VAR(self, n, isNew):
-		super().VAR(n, isNew)
-		if self.typed and n['class']:
-			self.emit(':'+n['class'])
-
 	def FUNC(self, n):
-		self.emit(f'def {n["id"]}(')
+		self.emit('def ')
+		self.emit(f'{n["id"]}(')
 		self.gen(n['params'])
-		if n['class']:
+		if self.typed and n['class']:
 			self.emit(f')->{n["class"]}:')
 		else:
 			self.emit(f'):')
@@ -45,7 +41,9 @@ class GenPy(GenX):
 
 	def FOR(self, n):
 		self.emit('for ')
-		self.gen(n['var'])
+		v = n['var']
+		id = v if isinstance(v, str) else v['id']
+		self.emit(id)
 		self.emit(' in ')
 		self.gen(n['expr'])
 		self.emit(': ')

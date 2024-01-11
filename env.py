@@ -1,8 +1,9 @@
 import json
 
 class Env:
-	def __init__(self, parent, returnClass=None):
+	def __init__(self, name, parent, returnClass=None):
 		self.vars = {}
+		self.name = name
 		self.parent = parent
 		self.returnClass = returnClass
 
@@ -25,5 +26,5 @@ class Env:
 			return None
 		
 	def __repr__(self):
-		return f'env:returnClass={self.returnClass}\nvars={json.dumps(self.vars)}'
+		return f'env:name={self.name} parent={self.parent.name} returnClass={self.returnClass}\nvars={json.dumps(self.vars)}'
 

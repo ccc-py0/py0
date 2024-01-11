@@ -18,7 +18,7 @@ def parse(code, fname='<unknown file>'):
 	lines = ['']+lines
 	tokens = lex(code)
 	ti = 0
-	env = Env(None)
+	env = Env('global', None)
 	return STMTS()
 
 def perror(msg):
@@ -108,7 +108,7 @@ def STMT():
 		s = RETURN()
 	elif isNextT("id"):
 		id = next()
-		if isNext("="):
+		if isNextSet(['=', ':']):
 			back()
 			s = ASSIGN()
 		else:
@@ -123,21 +123,26 @@ def IMPORT():
 	id = nextT('id')
 	return  {'type':'import', 'id':id }
 
-# FUNC = def id(PARAMS): BLOCK
+# FUNC = def id(PARAMS) (->id)? : BLOCK
 def FUNC():
 	global env
-	fenv = Env(env)
-	env = fenv
 	next('def')
 	id = nextT('id')
 	env.add(id, 'func')
+
+	fenv = Env(id, env)
+	env = fenv
 	next('(')
 	params = PARAMS()
 	next(')')
+
+	if isNext('->'):
+		next('->')
+		env.returnClass = nextT('id')
+		
 	next(':')
 	block = BLOCK()
 	env = env.parent
-	print('parser:FUNC:fenv=', fenv)
 	return {'type':'func', 'class':fenv.returnClass, 'id':id, 'params':params, 'block':block}
 
 # IF = if expr: stmt (elif stmt)* (else stmt)?
@@ -185,7 +190,6 @@ def RETURN():
 	e = EXPR()
 	if not env.returnClass:
 		env.returnClass = e['class']
-		print('RETURN():env=', env)
 	return {'type':'return', 'expr':e}
 
 # ASSIGN = VAR = EXPR
@@ -200,6 +204,7 @@ def ASSIGN():
 		v['class']=vClass
 	else:
 		v['class'] = e['class']
+		if e['class']:env.add(v['id'], e['class'])
 
 	return {'type':'assign', 'var':v, 'expr':e}
 
@@ -213,15 +218,9 @@ def PARAMS():
 
 # PARAM = id
 def PARAM():
-	id = nextT('id')
-	return {'type':'param', 'id':id}
-
-"""
-# TYPE = id
-def TYPE():
-	ty = nextT('id')
-	return {'type':'type', 'class':ty}
-"""
+	# id = nextT('id')
+	v = VAR()
+	return {'type':'param', 'class':v['class'], 'id':v['id']}
 
 level = 0
 # BLOCK = begin STMTS end
@@ -380,8 +379,18 @@ def ARGS():
 	return {'type':'args', 'args':args}
 
 def VAR():
-	id = nextT('id')
-	return {'type':'var', 'class':env.findClass(id), 'id':id}
+	name = nextT('id')
+	idClass = env.findClass(name)
+	if isNext(':'):
+		next(':')
+		idClass = nextT('id')
+		if name in env.vars:
+			if idClass != env.vars['id']:
+				perror('type mismatch')
+		else:
+			env.vars[name] = idClass
+			env.add(name, idClass)
+	return {'type':'var', 'class':idClass, 'id':name}
 
 """
 def nodeDump(node, level):

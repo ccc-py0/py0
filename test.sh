@@ -1,7 +1,9 @@
 set -x
 
-python py0.py run example/mt.py0 py
-python py0.py run example/mt.py0 js
+python py0.py run example/typed.py0 py
+python py0.py run example/typed.py0 js
+# python py0.py run example/mt.py0 py
+# python py0.py run example/mt.py0 js
 
 # python py0.py convert example/assign.py0 py
 # python py0.py parse example/assign.py0 py

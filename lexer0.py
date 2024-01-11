@@ -27,14 +27,14 @@ def tokenize(code):
 		}
 	"""
 	token_specification = [
-		('str',   r'(".*?")|(\'.*?\')'),        # String
+		('str',      r'(".*?")|(\'.*?\')'), # String
 		('float',    r'\d+\.\d*'),     # Float
-		('int',  r'\d+'),          # Integer
+		('int',      r'\d+'),          # Integer
 		('id',       r'[A-Za-z_]\w*'), # Identifiers
-		('op2',      r'(==)|(!=)|(<=)|(>=)'),    # Arithmetic operators
+		('op2',      r'(==)|(!=)|(<=)|(>=)|(\+=)|(-=)|(\*=)|(/=)|(%=)|(->)'), # 雙字元以上的的運算
 		('indent',   r'\n\t*'),        # Line indent
 		('space',    r'[ \t]+'),       # Skip over spaces and tabs
-		('char',     r'[{}()\[\]\+\-\*/=!:<>,&|^~.]'), # 
+		('char',     r'[{}()\[\]\+\-\*/%=!:<>,&|^~.]'), # 
 		('mismatch', r'.'),            # Any other character
 	]
 	tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)

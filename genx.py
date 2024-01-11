@@ -5,7 +5,7 @@ class GenX:
 	def __init__(self, typed=False):
 		self.level = 0
 		self.emits = []
-		self.env = Env(None)
+		self.env = Env('global', None)
 		self.typed = typed
 
 	def STMTS(self, n):
@@ -57,15 +57,25 @@ class GenX:
 		self.gen(n['expr'])
 
 	def VAR(self, n, isNew):
-		# if isNew: self.emit('var ')
 		self.emit(n['id'])
-		# if self.typed: self.emit(':'+n['class'])
+		if isNew and self.typed and n['class']: # 第一次出現的變數(新的) ，要輸出 class，而且有 class 了
+			self.emit(':'+n['class'])
 
+	def PARAM(self, n):
+		self.emit(n['id'])
+		if self.typed and n['class']:
+			self.emit(':'+n['class'])
+
+	"""
 	def FUNC(self, n):
 		self.emit(f'function {n["id"]}(')
 		self.gen(n['params'])
 		self.emit(')')
 		self.gen(n['block'])
+	"""
+
+	def FUNC(self, n):
+		error('genx.FUNC() 未實作，繼承者必須自己實作！')
 
 	def PARAMS(self, n):
 		params = n['params']
@@ -74,9 +84,6 @@ class GenX:
 			self.gen(param)
 			self.emit(',')
 		self.gen(params[-1])
-
-	def PARAM(self, n):
-		self.emit(n['id'])
 
 	def BLOCK(self, n): # BLOCK  = begin STMTS end
 		self.emit(' {')
@@ -204,9 +211,9 @@ class GenX:
 				self.RETURN(n)
 			case 'assign':
 				self.ASSIGN(n)
-			case 'func':
+			case 'func': # def id(PARAMS): BLOCK
 				# print('func:level=', self.level)
-				self.env = Env(self.env) # 創建新的 Env
+				self.env = Env(n['id'], self.env) # 創建新的 Env
 				params = n['params']['params']
 				for param in params:
 					# print('param=', param)
