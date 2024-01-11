@@ -2,8 +2,9 @@ set -x
 
 python py0.py run example/fib.py0 c
 
-# python py0.py run example/typed.py0 py
-# python py0.py run example/typed.py0 js
+python py0.py run example/typed.py0 py
+python py0.py run example/typed.py0 js
+
 # python py0.py run example/mt.py0 py
 # python py0.py run example/mt.py0 js
 
