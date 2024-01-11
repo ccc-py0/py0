@@ -22,6 +22,7 @@ def run(code, lang):
 			cmd = f'python {toFile}'
 		case 'c':
 			toCode = convert(code, lang, typed=True)
+			cmd = f'gcc -c {toFile}'
 	print(f'-------------- {toFile} -----------')
 	print(toCode)
 	lib0.writeTextFile(toFile, toCode)

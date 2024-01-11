@@ -5,23 +5,21 @@ from genx import GenX
 class GenC(GenX):
 	def IMPORT(self, n):
 		id = n['id']
-		self.emit(f'#include <sys0.h>')
+		self.emit(f'#include <{id}.h>')
 
 	def FUNC(self, n):
-		self.emit(f'int {n["id"]}(')
+		self.emit(f'{n["class"]} {n["id"]}(')
 		self.gen(n['params'])
-		self.emit(')')
+		self.emit(f')')
 		self.gen(n['block'])
 
 	def PARAMS(self, n):
 		params = n['params']
 		if len(params) == 0: return
-		for param in params[0:-1]:
-			self.emit('int ')
-			self.gen(param)
-			self.emit(',')
-		self.emit('int ')
-		self.gen(params[-1])
+		for i, param in enumerate(params):
+			self.emit(f'{param["class"]} {param["id"]}')
+			if i != len(params)-1:
+				self.emit(',')
 
 	def STMT(self, n):
 		ty = n['stmt']['type']
@@ -29,7 +27,7 @@ class GenC(GenX):
 			self.emit(f'\n{self.indent()}')
 		self.gen(n['stmt'])
 		if not ty in ['block', 'if', 'while', 'func', 'for', 'import']:
-			self.emit(';')		
+			self.emit(';')
 		
 	def STR(self, n):
 		self.emit(n['value'].replace("'",'"'))
