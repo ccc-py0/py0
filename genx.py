@@ -1,12 +1,19 @@
 from lib0 import *
 from env import Env
 
+
 class GenX:
-	def __init__(self, typed=False):
+	def __init__(self, typed=False, classMap=None):
 		self.level = 0
 		self.emits = []
 		self.env = Env('global', None)
 		self.typed = typed
+		self.classMap = classMap
+
+	def mapClass(self, pClass):
+		if not self.classMap: return pClass
+		rClass = self.classMap[pClass] if pClass else '?'
+		return rClass
 
 	def STMTS(self, n):
 		for stmt in n['stmts']:
@@ -59,20 +66,12 @@ class GenX:
 	def VAR(self, n, isNew):
 		self.emit(n['id'])
 		if isNew and self.typed and n['class']: # 第一次出現的變數(新的) ，要輸出 class，而且有 class 了
-			self.emit(':'+n['class'])
+			self.emit(':'+self.mapClass(n['class']))
 
 	def PARAM(self, n):
 		self.emit(n['id'])
 		if self.typed and n['class']:
 			self.emit(':'+n['class'])
-
-	"""
-	def FUNC(self, n):
-		self.emit(f'function {n["id"]}(')
-		self.gen(n['params'])
-		self.emit(')')
-		self.gen(n['block'])
-	"""
 
 	def FUNC(self, n):
 		error('genx.FUNC() 未實作，繼承者必須自己實作！')

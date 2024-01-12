@@ -55,6 +55,9 @@ def array(n, value):
 def join(a, spliter=' '):
     return spliter.join([str(x) for x in a])
 
+def split(s, spliter=' '):
+    return s.split(spliter)
+
 pymap = map
 pyfilter = filter
 from functools import reduce

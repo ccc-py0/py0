@@ -20,9 +20,9 @@ def run(code, lang):
 			toCode = convert(code, lang, typed=True)
 			toCode = 'import sys\nsys.path.append("sys0")\n'+toCode
 			cmd = f'python {toFile}'
-		case 'c':
+		case 'cpp':
 			toCode = convert(code, lang, typed=True)
-			cmd = f'gcc -c {toFile}'
+			cmd = f'g++ -c {toFile} -I ./sys0/'
 	print(f'-------------- {toFile} -----------')
 	print(toCode)
 	lib0.writeTextFile(toFile, toCode)

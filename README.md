@@ -3,7 +3,12 @@
 Py0 is a subset of Python that can be convert into 
 
 1. JavaScript
-2. C / C++
+2. C++/C
+
+and py0 will support the following language in the future
+
+3. Dart
+4. C#
 
 ## Example 1 : Convert to JavaScript and run
 
