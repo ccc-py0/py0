@@ -1,2 +1,2 @@
-python setup.py build_ext --inplace
-python test.py
+python3 setup.py build_ext --inplace
+python3 test.py

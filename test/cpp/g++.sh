@@ -1,0 +1,1 @@
+g++ -std=c++17 -finput-charset=utf-8 -fexec-charset=utf-8 $1
