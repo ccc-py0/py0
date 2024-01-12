@@ -1,17 +1,17 @@
 function fib
 param n
-T1 = n == 0
-T2 = n == 1
-T3 = T1 or T2
-if_not T3 goto L1
-return 1
+== n 0 T1
+== n 1 T2
+or T1 T2 T3
+jne T3 L1
+ret 1
 (L1)
-T4 = n - 1
-push T4
-T5 = call fib
-T6 = n - 2
-push T6
-T7 = call fib
-T8 = T5 + T7
-return T8
+- n 1 T4
+arg T4
+call fib T5
+- n 2 T6
+arg T6
+call fib T7
++ T5 T7 T8
+ret T8
 fend

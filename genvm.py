@@ -2,20 +2,12 @@ from lib0 import *
 from env import Env
 from genx import GenX
 
-class GenAsm(GenX):
-	def __init__(self, typed=False, classMap=None):
+class GenVm(GenX):
+	def __init__(self, typed=False, classMap=None, vm=None):
 		super().__init__(typed, classMap)
 		self.tempId = 0
 		self.labelId = 0
-
-	def newLabel(self):
-		self.labelId += 1
-		return f'L{self.labelId}'
-
-	def newTemp(self):
-		self.tempId += 1
-		# print(f'T{self.tempId}')
-		return f'T{self.tempId}'
+		self.vm = vm
 
 	def STMTS(self, n):
 		for stmt in n['stmts']:
@@ -27,17 +19,18 @@ class GenAsm(GenX):
 		self.gen(n['stmt'])
 
 	def IMPORT(self, n):
-		self.emit(f'import {n["id"]}')
+		self.vm.include(n["id"])
 
 	def WHILE(self, n):
-		labelStart = self.newLabel()
-		labelEnd = self.newLabel()
-		self.emit(f'({labelStart})')
+		vm = self.vm
+		labelStart = vm.newLabel()
+		labelEnd = vm.newLabel()
+		vm.label(labelStart)
 		e = self.gen(n['expr'])
-		self.emit(f'if_not {e} goto {labelEnd}')
+		vm.jne(e, labelEnd)
 		self.gen(n['stmt'])
-		self.emit(f'({labelEnd})')
-
+		vm.label(labelEnd)
+	
 	def FOR(self, n): # FOR = for VAR in EXPR: STMT
 		error('尚未實作')
 	"""
@@ -50,28 +43,29 @@ class GenAsm(GenX):
 	"""
 
 	def IF(self, n):
+		vm = self.vm
 		e = self.gen(n['expr'])
-		nextLabel = self.newLabel()
-		self.emit(f'if_not {e} goto {nextLabel}')
+		nextLabel = vm.newLabel()
+		vm.jne(e, nextLabel)
 		self.gen(n['stmt'])
-		self.emit(f'({nextLabel})')
+		vm.label(nextLabel)
 		for el in n['elifList']:
 			e = self.gen(el['expr'])
-			nextLabel = self.newLabel()
-			self.emit(f'if_not {e} goto {nextLabel}')
+			nextLabel = vm.newLabel()
+			vm.jne(e, nextLabel)
 			self.gen(el['stmt'])
-			self.emit(f'({nextLabel})')
+			vm.label(nextLabel)
 		if n['elseStmt']:
 			e = self.gen(n['elseStmt'])
 
 	def RETURN(self, n):
 		e = self.gen(n['expr'])
-		self.emit(f'return {e}')
+		self.vm.ret(e)
 
 	def ASSIGN(self, n):
 		v = self.gen(n['var'])
 		e = self.gen(n['expr'])
-		self.emit(f'{v} = {e}')
+		self.assign(v, e)
 
 	def VAR(self, n, isNew):
 		return n['id']
@@ -79,15 +73,17 @@ class GenAsm(GenX):
 			# self.emit(':'+self.mapClass(n['class']))
 
 	def PARAM(self, n):
-		self.emit(f'param {n["id"]}')
+		self.vm.param(n['id'])
 		# if self.typed and n['class']:
 		#	self.emit(':'+n['class'])
 
 	def FUNC(self, n):
-		self.emit(f'function {n["id"]}')
-		p = self.gen(n['params'])
+		vm = self.vm
+		print('FUNC:n[id]=', n['id'])
+		vm.func(n['id'])
+		self.gen(n['params'])
 		self.gen(n['block'])
-		self.emit('fend')
+		vm.fend()
 
 	def PARAMS(self, n):
 		params = n['params']
@@ -106,6 +102,7 @@ class GenAsm(GenX):
 		# (if EXPR else EXPR)? 尚未處理
 
 	def opListGen(self, n):
+		vm = self.vm
 		list1 = n['list']
 		len1 = len(list1)
 		t1 = self.gen(list1[0])
@@ -113,8 +110,8 @@ class GenAsm(GenX):
 		while li + 1 < len1:
 			op = list1[li]
 			e2 = self.gen(list1[li+1])
-			t3 = self.newTemp()
-			self.emit(f'{t3} = {t1} {op} {e2}')
+			t3 = vm.newTemp()
+			vm.op2(op, t1, e2, t3)
 			t1 = t3
 			li += 2
 		return t1
@@ -155,7 +152,8 @@ class GenAsm(GenX):
 	"""
 
 	def OBJ(self, n): # OBJ = id | str | int | float | LREXPR
-		print(f'OBJ:n={n}')
+		vm = self.vm
+		# print(f'OBJ:n={n}')
 		ty = n['obj']['type']
 		match ty:
 			case 'lrexpr':
@@ -164,7 +162,7 @@ class GenAsm(GenX):
 				return n['value']
 			case 'str' | 'int' | 'float':
 				t = self.newTemp()
-				self.emit(f'{t} = {n["value"]}')
+				vm.assign(t, n["value"])
 				return t
 
 	def ARGS(self, n): # ARGS = (EXPR ',')* EXPR? # args
@@ -172,10 +170,11 @@ class GenAsm(GenX):
 		if len(args)>0:
 			for arg in args:
 				e = self.gen(arg)
-				self.emit(f'push {e}')
+				self.vm.arg(e)
 
 
 	def TERM(self, n): # TERM   = OBJ ( [EXPR] | . id | (ARGS) )*
+		vm = self.vm
 		tlist = n['list']
 		obj = tlist[0]
 		o = self.gen(obj['obj'])
@@ -184,14 +183,14 @@ class GenAsm(GenX):
 			if op == 'index':
 				idx = self.gen(t['expr'])
 				tmp = self.newTemp()
-				self.emit(f'{tmp} = {o}[{idx}]')
+				vm.index(o, idx, tmp)
 			elif op == 'member':
 				tmp = self.newTemp()
-				self.emit(f'{tmp} = {o}.{t["id"]}')
+				vm.member(o, t['id'], tmp)
 			elif op == 'call':
 				self.gen(t['args'])
-				tmp = self.newTemp()
-				self.emit(f'{tmp} = call {o}')
+				tmp = vm.newTemp()
+				vm.call(o, tmp)
 			else:
 				error(f'term: op = {op} 不合法！')
 			o = tmp
@@ -208,7 +207,3 @@ class GenAsm(GenX):
 
 	def ID(self, n):
 		return n['id']
-
-	def emitCode(self):
-		print(self.emits)
-		return '\n'.join(self.emits)

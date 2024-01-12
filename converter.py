@@ -2,7 +2,7 @@ from parser0 import parse
 from genpy import GenPy
 from genjs import GenJs
 from gencpp import GenCpp
-from genasm import GenAsm
+from asm import GenAsm
 
 langGen = {'py':GenPy, 'js':GenJs, 'cpp':GenCpp, 'asm':GenAsm }
 
