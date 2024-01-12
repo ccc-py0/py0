@@ -23,6 +23,9 @@ def run(code, lang):
 		case 'cpp':
 			toCode = convert(code, lang, typed=True)
 			cmd = f'g++ -c {toFile} -I ./sys0/'
+		case 'asm':
+			toCode = convert(code, lang, typed=True)
+			cmd = f'echo asm {toFile}'
 	print(f'-------------- {toFile} -----------')
 	print(toCode)
 	lib0.writeTextFile(toFile, toCode)

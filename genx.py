@@ -226,33 +226,33 @@ class GenX:
 			case 'block':
 				self.BLOCK(n)
 			case 'expr':
-				self.EXPR(n)
+				return self.EXPR(n)
 			case 'mexpr':
-				self.MEXPR(n)
+				return self.MEXPR(n)
 			case 'cexpr':
-				self.CEXPR(n)
+				return self.CEXPR(n)
 			case 'bexpr':
-				self.BEXPR(n)
+				return self.BEXPR(n)
 			case 'lrexpr': 
-				self.LREXPR(n)
+				return self.LREXPR(n)
 			case 'list':
-				self.LIST(n)
+				return self.LIST(n)
 			case 'dict':
-				self.DICT(n)
+				return self.DICT(n)
 			case 'obj':
-				self.OBJ(n)
+				return self.OBJ(n)
 			case 'term':
-				self.TERM(n)
+				return self.TERM(n)
 			case 'args': 
-				self.ARGS(n)
+				return self.ARGS(n)
 			case 'float':
-				self.FLOAT(n)
+				return self.FLOAT(n)
 			case 'int':
-				self.INT(n)
+				return self.INT(n)
 			case 'str':
-				self.STR(n)
+				return self.STR(n)
 			case 'id':
-				self.ID(n)
+				return self.ID(n)
 			case 'var':
 				id = n["id"]
 				isNew = not self.env.findEnv(id)

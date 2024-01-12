@@ -2,8 +2,9 @@ from parser0 import parse
 from genpy import GenPy
 from genjs import GenJs
 from gencpp import GenCpp
+from genasm import GenAsm
 
-langGen = {'py':GenPy,'js':GenJs,'cpp':GenCpp}
+langGen = {'py':GenPy, 'js':GenJs, 'cpp':GenCpp, 'asm':GenAsm }
 
 def convert(code, lang, typed=False):
 	ast = parse(code)
