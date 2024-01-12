@@ -37,12 +37,6 @@ class GenAsm(GenX):
 		self.emit(f'if_not {e} goto {labelEnd}')
 		self.gen(n['stmt'])
 		self.emit(f'({labelEnd})')
-		"""
-		self.emit('while (')
-		self.gen(n['expr'])
-		self.emit(')')
-		self.gen(n['stmt'])
-		"""
 
 	def FOR(self, n): # FOR = for VAR in EXPR: STMT
 		error('尚未實作')
@@ -71,19 +65,16 @@ class GenAsm(GenX):
 			e = self.gen(n['elseStmt'])
 
 	def RETURN(self, n):
-		# self.emit('return ')
 		e = self.gen(n['expr'])
 		self.emit(f'return {e}')
 
 	def ASSIGN(self, n):
 		v = self.gen(n['var'])
-		# self.emit(' = ')
 		e = self.gen(n['expr'])
 		self.emit(f'{v} = {e}')
 
 	def VAR(self, n, isNew):
 		return n['id']
-		# self.emit(n['id'])
 		# if isNew and self.typed and n['class']: # 第一次出現的變數(新的) ，要輸出 class，而且有 class 了
 			# self.emit(':'+self.mapClass(n['class']))
 
@@ -182,16 +173,12 @@ class GenAsm(GenX):
 			for arg in args:
 				e = self.gen(arg)
 				self.emit(f'push {e}')
-				# self.emit(' , ')
-			# self.gen(args[-1])
 
 
 	def TERM(self, n): # TERM   = OBJ ( [EXPR] | . id | (ARGS) )*
 		tlist = n['list']
 		obj = tlist[0]
-		# print(f'TERM:obj={obj}')
 		o = self.gen(obj['obj'])
-		# print(f'TERM:o={o}')
 		for t in tlist[1:]:
 			op = t['type']
 			if op == 'index':
@@ -220,7 +207,6 @@ class GenAsm(GenX):
 		return n['value']
 
 	def ID(self, n):
-		# print(f'ID:{n}')
 		return n['id']
 
 	def emitCode(self):
