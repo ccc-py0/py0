@@ -26,9 +26,13 @@ def run(code, lang):
 		case 'asm':
 			toCode = convert(code, lang, typed=True)
 			cmd = f'echo asm {toFile}'
+		case 'obj':
+			toCode = convert(code, lang, typed=True)
+			cmd = f'echo obj {toFile}'
 	print(f'-------------- {toFile} -----------')
 	print(toCode)
-	lib0.writeTextFile(toFile, toCode)
+	if lang != 'obj':
+		lib0.writeTextFile(toFile, toCode)
 	if op == 'run':
 		print('---------- run ---------------')
 		os.system(cmd)

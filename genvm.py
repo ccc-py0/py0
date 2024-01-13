@@ -5,9 +5,10 @@ from genx import GenX
 class GenVm(GenX):
 	def __init__(self, typed=False, classMap=None, vm=None):
 		super().__init__(typed, classMap)
-		self.tempId = 0
-		self.labelId = 0
 		self.vm = vm
+
+	def emitCode(self):
+		return self.vm.emitCode()
 
 	def STMTS(self, n):
 		for stmt in n['stmts']:
@@ -79,7 +80,6 @@ class GenVm(GenX):
 
 	def FUNC(self, n):
 		vm = self.vm
-		print('FUNC:n[id]=', n['id'])
 		vm.func(n['id'])
 		self.gen(n['params'])
 		self.gen(n['block'])

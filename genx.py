@@ -1,7 +1,6 @@
 from lib0 import *
 from env import Env
 
-
 class GenX:
 	def __init__(self, typed=False, classMap=None):
 		self.level = 0
