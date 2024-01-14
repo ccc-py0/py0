@@ -1,9 +1,4 @@
 code = """
-a = 3
-"""
-
-
-"""
 def fib(n):
 	if n == 0 or n == 1:
 		return 1

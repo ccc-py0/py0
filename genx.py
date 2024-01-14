@@ -215,7 +215,7 @@ class GenX:
 				params = n['params']['params']
 				for param in params:
 					# print('param=', param)
-					self.env.add(param['id'], '?')
+					self.env.add(param['id'], {'class':'?'})
 				self.FUNC(n)
 				self.env = self.env.parent # 退出 Env
 			case 'params':
@@ -256,5 +256,5 @@ class GenX:
 				id = n["id"]
 				isNew = not self.env.findEnv(id)
 				if isNew:
-					self.env.add(id, '?')
+					self.env.add(id, {'class':'?'})
 				self.VAR(n, isNew)

@@ -10,12 +10,16 @@ class Env:
 	def add(self, name, type):
 		self.vars[name] = type
 
-	def findClass(self, name):
+	def find(self, name):
 		env = self.findEnv(name)
 		if env:
 			return env.vars[name]
 		else:
 			return None
+
+	def findClass(self, name):
+		v = self.find(name)
+		return v['class'] if v else None
 
 	def findEnv(self, name):
 		if name in self.vars:

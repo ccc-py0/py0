@@ -1,5 +1,10 @@
-from lib0 import *
+# from lib0 import *
 from env import Env
+from parser0 import *
+
+def error(n, msg):
+	print(f'Error: node {n}\n{msg}')
+	raise Exception('interpereter:error')
 
 env = None
 
@@ -25,12 +30,10 @@ def run(n):
 		case 'assign':
 			ASSIGN(n)
 		case 'func': # def id(PARAMS): BLOCK
-			# print('func:level=', level)
 			env = Env(n['id'], env) # 創建新的 Env
 			params = n['params']['params']
 			for param in params:
-				# print('param=', param)
-				env.add(param['id'], '?')
+				env.add(param['id'], {'class':'?'})
 			FUNC(n)
 			env = env.parent # 退出 Env
 		case 'params':
@@ -71,7 +74,7 @@ def run(n):
 			id = n["id"]
 			isNew = not env.findEnv(id)
 			if isNew:
-				env.add(id, '?')
+				env.add(id, {'class':'?'})
 			VAR(n, isNew)
 
 def STMTS(n):
@@ -82,169 +85,186 @@ def STMT(n):
 	run(n['stmt'])
 
 def IMPORT(n):
-	emit(f'import {n["id"]}')
+	error('尚未實作')
+	# emit(f'import {n["id"]}')
 
 def WHILE(n):
-	emit('while (')
-	run(n['expr'])
-	emit(')')
-	run(n['stmt'])
+	while run(n['expr']):
+		run(n['stmt'])
 
 def FOR(n): # FOR = for VAR in EXPR: STMT
-	emit('for (')
-	run(n['var'])
-	emit(' in ')
+	error('尚未實作')
+	"""
+	# emit('for (')
+	id = run(n['var']['id'])
+	# emit(' in ')
 	run(n['expr'])
-	emit(')')
+	# emit(')')
 	run(n['stmt'])
+	"""
 
 def IF(n):
-	emit('if (')
-	run(n['expr'])
-	emit(')')
-	run(n['stmt'])
-	for el in n['elifList']:
-		emit('else if ')
-		run(el['expr'])
-		run(el['stmt'])
-	if n['elseStmt']:
-		emit('else')
-		run(n['elseStmt'])
+	if run(n['expr']):
+		run(n['stmt'])
+	else:
+		for el in n['elifList']:
+			if run(el['expr']):
+				run(el['stmt'])
+		if n['elseStmt']:
+			run(n['elseStmt'])
 
 def RETURN(n):
-	emit('return ')
-	run(n['expr'])
+	# emit('return ')
+	return run(n['expr'])
 
-def ASSIGN(n):
-	run(n['var'])
-	emit(' = ')
-	run(n['expr'])
+def ASSIGN(n): # VAR = EXPR
+	global env
+	id = run(n['var'])
+	value = run(n['expr'])
+	var = env.find(id)
+	if var:
+		var['value'] = value
 
 def VAR(n, isNew):
-	emit(n['id'])
-	if isNew and n['class']: # 第一次出現的變數(新的) ，要輸出 class，而且有 class 了
-		pass
-		# emit(':'+mapClass(n['class']))
-
-def PARAM(n):
-	emit(n['id'])
-	if n['class']:
-		emit(':'+n['class'])
+	return n['id']
 
 def FUNC(n):
-	emit('def ')
-	emit(f'{n["id"]}(')
+	env = Env(n['id'], env)
 	run(n['params'])
-	if n['class']:
-		emit(f')->{n["class"]}:')
-	else:
-		emit(f'):')
 	run(n['block'])
+	env = env.parent
 
 def PARAMS(n):
 	params = n['params']
-	if len(params) == 0: return
-	for param in params[0:-1]:
-		run(param)
-		emit(',')
-	run(params[-1])
+	for param in params:
+		run(param['id'])
+
+def PARAM(n):
+	global env
+	env.add({'id': n['id']})
 
 def BLOCK(n): # BLOCK  = begin STMTS end
-	emit(' {')
 	level += 1
-	# print('block:level=', level)
 	run(n['stmts'])
-	# print('block:level=', level)
 	level -= 1
-	emit('\n'+indent()+'}')
-	emit('\n')
 
 def EXPR(n): # EXPR = BEXPR (if EXPR else EXPR)?
 	run(n['bexpr'])
 	# (if EXPR else EXPR)? 尚未處理
+def op2run(a, op, b):
+	match op:
+		case '+': return a+b
+		case '-': return a-b
+		case '*': return a*b
+		case '/': return a/b
+		case '%': return a%b
+		case 'and':	return a and b
+		case 'or': return a or b
+		case '==': return a==b
+		case '!=': return a!=b
+		case '<=': return a<=b
+		case '>=': return a>=b
+		case '<': return a<b
+		case '>': return a>b
+		case _: error(f'op2run: op={op} not found!')
+
+def opListRun(n):
+	list1 = n['list']
+	len1 = len(list1)
+	t1 = run(list1[0])
+	li = 1
+	while li + 1 < len1:
+		op = list1[li]
+		e2 = run(list1[li+1])
+		t3 = op2run(t1, op, e2)
+		# t3 = ir.newTemp()
+		# ir.op2(op, t1, e2, t3)
+		t1 = t3
+		li += 2
+	return t1
 
 def MEXPR(n):
-	for e in n['list']:
-		if isinstance(e, str): # op
-			emit(f' {e} ')
-		else:
-			run(e)
+	return opListRun(n)
 
 def CEXPR(n):
-	MEXPR(n)
+	return opListRun(n)
 
 def BEXPR(n):
-	MEXPR(n)
+	return opListRun(n)
 
 def LREXPR(n): # LREXPR = ( EXPR )
-	emit('(')
-	run(n['expr'])
-	emit(')')
+	return run(n['expr'])
 
 def LIST(n): # LIST = [ (EXPR ,)* EXPR? ]
-	emit('[')
 	elist = n['list']
+	rlist = []
 	if len(elist)>0:
-		for expr in elist[0:-1]:
-			run(expr)
-			emit(',')
-		run(elist[-1])
-	emit(']')
+		for expr in elist:
+			rlist.append(run(expr))
+	return rlist
 
 def DICT(n):
-	emit('{')
 	pairs = n['pairs']
-	for pair in pairs[0:-1]:
-		emit(pair['key']+':')
-		run(pair['value'])
-		emit(',')
-	emit(pairs[-1]['key']+':')
-	run(pairs[-1]['value'])
-	emit('}')
+	rdict = {}
+	for pair in pairs:
+		value = run(pair['value'])
+		rdict[pair['key']] = value
+	return rdict
 
-def OBJ(n): # OBJ = id | string | int | float | LREXPR
-	if n['type'] == 'lrexpr':
-		run(n['expr'])
-	else:
-		emit(n['value'])
+def OBJ(n): # OBJ = id | str | int | float | LREXPR
+	ty = n['type']
+	value = n['value']
+	match ty:
+		case 'lrexpr': return run(n['expr'])
+		case 'id': return VAR(n)
+		case 'int': return INT(n)
+		case 'float': return FLOAT(n)
+		case 'str': return STR(n)
+		case _: error(f'OBJ:type error, type={ty} unknown')
 
 def TERM(n): # TERM   = OBJ ( [EXPR] | . id | (ARGS) )*
 	tlist = n['list']
 	obj = tlist[0]
-	run(obj['obj'])
+	o = run(obj['obj'])
 	for t in tlist[1:]:
 		op = t['type']
 		if op == 'index':
-			emit('[')
-			run(t['expr'])
-			emit(']')
+			i = run(t['expr'])
+			return o[i]
 		elif op == 'member':
-			emit('.'+t['id'])
+			# emit('.'+t['id'])
+			error('TERM:member not support yet!')
 		elif op == 'call':
-			emit('(')
-			run(t['args'])
-			emit(')')
+			args = run(t['args'])
+			return o(args)
 		else:
 			error(f'term: op = {op} 不合法！')
 
 def ARGS(n): # ARGS = (EXPR ',')* EXPR? # args
 	args = n['args']
+	rlist = []
 	if len(args)>0:
-		for arg in args[0:-1]:
-			run(arg)
-			emit(' , ')
-		run(args[-1])
+		for arg in args:
+			rlist.append(run(arg))
+	return rlist
 
 def FLOAT(n):
-	emit(n['value'])
+	return float(n['value'])
 
 def INT(n):
-	emit(n['value'])
+	return int(n['value'])
 
 def STR(n):
-	emit(n['value'])
+	return n['value'].substr(1, -1)
 
 def ID(n):
-	emit(n['id'])
+	return env.find(n['id'])['value']
 
-
+# 測試詞彙掃描器
+if __name__ == "__main__":
+	from test0 import code
+	code = 'print("Hello 你好！")'
+	ast = parse(code)
+	astDump(ast)
+	run(ast)
+	# print(ast)

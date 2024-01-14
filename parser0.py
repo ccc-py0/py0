@@ -128,7 +128,7 @@ def FUNC():
 	global env
 	next('def')
 	id = nextT('id')
-	env.add(id, 'func')
+	env.add(id, {'class':'func'})
 
 	fenv = Env(id, env)
 	env = fenv
@@ -204,7 +204,7 @@ def ASSIGN():
 		v['class']=vClass
 	else:
 		v['class'] = e['class']
-		if e['class']:env.add(v['id'], e['class'])
+		if e['class']:env.add(v['id'], {'class':e['class']})
 
 	return {'type':'assign', 'var':v, 'expr':e}
 
@@ -388,8 +388,8 @@ def VAR():
 			if idClass != env.vars['id']:
 				perror('type mismatch')
 		else:
-			env.vars[name] = idClass
-			env.add(name, idClass)
+			# env.vars[name] = {'class':idClass}
+			env.add(name, {'class':idClass})
 	return {'type':'var', 'class':idClass, 'id':name}
 
 """
