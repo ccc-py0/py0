@@ -90,6 +90,7 @@ def run(n):
 def STMTS(n):
 	# print('STMTS:env=', env)
 	for stmt in n['stmts']:
+		if env.returned: break
 		STMT(stmt)
 
 def STMT(n):
@@ -111,10 +112,7 @@ def PARAMS(n, args):
 def BLOCK(n): # BLOCK  = begin STMTS end
 	global level
 	level += 1
-	# print('BLOCK: begin')
-	# print('BLOCK:env=', env)
 	run(n['stmts'])
-	# print('BLOCK: end')
 	level -= 1
 
 def IMPORT(n):
@@ -138,7 +136,7 @@ def FOR(n): # FOR = for VAR in EXPR: STMT
 
 def IF(n):
 	e = EXPR(n['expr'])
-	print('IF:e=',e)
+	# print('IF:e=',e)
 	if e: # EXPR(n['expr']):
 		STMT(n['stmt'])
 	else:
@@ -150,7 +148,10 @@ def IF(n):
 
 def RETURN(n): # ccc , return 沒跳出函數
 	# emit('return ')
-	return run(n['expr'])
+	e = run(n['expr'])
+	env.returnValue = e
+	env.returned = True
+	return e
 
 def ASSIGN(n): # VAR = EXPR
 	id = run(n['var'])
@@ -163,12 +164,10 @@ def VAR(n, isNew):
 	return n['id']
 
 def EXPR(n): # EXPR = BEXPR (if EXPR else EXPR)?
-	# print('EXPR:n=', n)
-	return BEXPR(n)
-	# (if EXPR else EXPR)? 尚未處理
+	return BEXPR(n)	# (if EXPR else EXPR)? 尚未處理
 
 def op2run(a, op, b):
-	print(f'a={a} op={op} b={b}')
+	# print(f'a={a} op={op} b={b}')
 	if a == -2: error('op2run: exceed!')
 	match op:
 		case '+': return a+b
@@ -241,18 +240,12 @@ def TERM(n): # TERM   = OBJ ( [EXPR] | . id | (ARGS) )*
 			error('TERM:member not support yet!')
 		elif op == 'call':
 			args = run(t['args'])
-			# print(f'o={o} call {args}')
 			if isinstance(o, Function):
 				fname = obj['obj']['id']
-				# print('TERM: fname=', fname)
 				env = Env(o.fname, env)
-				# print('call: env=', env)
-				# print('run:params')
 				PARAMS(o.node['params'], args) # ccc back
-				# print('call: after params env=', env)
-				# print('run:block')
-				run(o.node['block']) # ccc: 在執行函數到一半，如何讓 return 跳出函數。
-				# 想法，在 env 中設一變數，當該變數為 return 狀態時，所有 stmt 都會直接不執行。
+				run(o.node['block'])
+				o = env.returnValue
 				env = env.parent
 			else: # Python 本身的函數
 				args = run(t['args'])
@@ -271,7 +264,6 @@ def ARGS(n): # ARGS = (EXPR ',')* EXPR? # args
 
 def OBJ(n): # OBJ = id | str | int | float | LREXPR
 	ty = n['type']
-	print(f'OBJ:n={n}')
 	match ty:
 		case 'lrexpr': return run(n['expr'])
 		case 'id': return VAR(n)
@@ -290,10 +282,7 @@ def STR(n):
 	return n['value'][1:-1]
 
 def ID(n):
-	print('ID: id=', n['id'])
-	# print(f'ID: env={env}')
 	obj = env.find(n['id'])
-	print('ID:obj=', obj)
 	return obj['value']
 
 # code = 'print("Hello 你好！")'

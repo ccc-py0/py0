@@ -6,6 +6,8 @@ class Env:
 		self.name = name
 		self.parent = parent
 		self.returnClass = returnClass
+		self.returnValue = None
+		self.returned = False
 
 	def add(self, name, obj):
 		self.vars[name] = obj
