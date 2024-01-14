@@ -4,9 +4,9 @@ from genx import GenX
 from ir import IR
 
 class GenIR(GenX):
-	def __init__(self, typed=False, classMap=None):
+	def __init__(self, mode='irasm', typed=False, classMap=None):
 		super().__init__(typed, classMap)
-		self.ir = IR()
+		self.ir = IR(mode)
 
 	def toCode(self):
 		return self.ir.toCode()

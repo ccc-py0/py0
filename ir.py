@@ -2,11 +2,12 @@ from lib0 import *
 import json
 
 class IR:
-	def __init__(self):
+	def __init__(self, mode='irasm'):
 		self.emits = []
 		self.labelMap = {}
 		self.labelId = 0
 		self.tempId = 0
+		self.mode = mode
 
 	def emit(self, code):
 		i = len(self.emits)
@@ -73,7 +74,10 @@ class IR:
 	
 	def toCode(self):
 		# return json.dumps({'code':self.emits, 'labels':self.labels})
-		return self.toAsm()
+		if self.mode == 'irasm':
+			return self.toAsm()
+		else:
+			return self.toObj()
 
 	def toAsm(self):
 		lines = []

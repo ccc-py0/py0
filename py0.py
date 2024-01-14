@@ -14,21 +14,21 @@ sys.excepthook = excepthook
 def run(code, lang):
 	match lang:
 		case 'js':
-			toCode = convert(code, lang, typed=False)
+			toCode = convert(code, lang)
 			cmd = f'deno run -A {toFile}'
 		case 'py':
-			toCode = convert(code, lang, typed=True)
+			toCode = convert(code, lang)
 			toCode = 'import sys\nsys.path.append("sys0")\n'+toCode
 			cmd = f'python {toFile}'
 		case 'cpp':
-			toCode = convert(code, lang, typed=True)
+			toCode = convert(code, lang)
 			cmd = f'g++ -c {toFile} -I ./sys0/'
-		case 'ir':
-			toCode = convert(code, lang, typed=True)
+		case 'irasm':
+			toCode = convert(code, lang)
 			cmd = f'echo ir {toFile}'
-		# case 'obj':
-		#	toCode = convert(code, lang, typed=True)
-		#	cmd = f'echo obj {toFile}'
+		case 'irobj':
+			toCode = convert(code, lang)
+			cmd = f'echo ir {toFile}'
 	print(f'-------------- {toFile} -----------')
 	print(toCode)
 	# if lang != 'obj':

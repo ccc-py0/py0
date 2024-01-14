@@ -3,7 +3,7 @@ from parser0 import parse
 from genx import *
 
 class GenCpp(GenX):
-	def __init__(self, typed):
+	def __init__(self):
 		map = {
 			"None": "any",
 			"int":"int",
@@ -12,7 +12,7 @@ class GenCpp(GenX):
 			"list":"vector",
 			"dict":"map"
 		}
-		super().__init__(typed, map)
+		super().__init__(typed=True, classMap=map)
 
 	def IMPORT(self, n):
 		id = n['id']

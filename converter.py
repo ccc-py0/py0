@@ -5,11 +5,11 @@ from gencpp import GenCpp
 from genir import GenIR
 # from genobj import GenObj
 
-langGen = {'py':GenPy, 'js':GenJs, 'cpp':GenCpp, 'ir':GenIR }
+langGen = {'py':GenPy(typed=True), 'js':GenJs(), 'cpp':GenCpp(), 'irasm':GenIR('irasm'), 'irobj':GenIR('irobj') }
 
-def convert(code, lang, typed=False):
+def convert(code, lang):
 	ast = parse(code)
 	# print(ast)
-	g = langGen[lang](typed)
+	g = langGen[lang]
 	g.gen(ast)
 	return g.toCode()

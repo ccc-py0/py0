@@ -1,10 +1,10 @@
 set -x
 
-# python py0.py convert example/fib.py0 obj
-python py0.py convert example/fib.py0 ir
-# python py0.py convert example/mt.py0 cpp
-# python py0.py run example/mt.py0 js
-# python py0.py run example/mt.py0 py
+python py0.py convert example/fib.py0 irobj
+python py0.py convert example/fib.py0 irasm
+python py0.py convert example/mt.py0 cpp
+python py0.py run example/mt.py0 js
+python py0.py run example/mt.py0 py
 # python py0.py run example/fib.py0 cpp
 
 # python py0.py run example/typed.py0 py
