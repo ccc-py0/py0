@@ -112,7 +112,7 @@ def PARAMS(n, args):
 def BLOCK(n): # BLOCK  = begin STMTS end
 	global level
 	level += 1
-	run(n['stmts'])
+	STMTS(n['stmts'])
 	level -= 1
 
 def IMPORT(n):
@@ -120,8 +120,8 @@ def IMPORT(n):
 	# emit(f'import {n["id"]}')
 
 def WHILE(n):
-	while run(n['expr']):
-		run(n['stmt'])
+	while EXPR(n['expr']):
+		STMT(n['stmt'])
 
 def FOR(n): # FOR = for VAR in EXPR: STMT
 	error('尚未實作')
@@ -146,16 +146,18 @@ def IF(n):
 		if n['elseStmt']:
 			STMT(n['elseStmt'])
 
-def RETURN(n): # ccc , return 沒跳出函數
-	# emit('return ')
-	e = run(n['expr'])
+def RETURN(n):
+	# print('RETURN n=', n)
+	# e = run(n['expr'])
+	e = EXPR(n['expr'])
+	# print('return ', e)
 	env.returnValue = e
 	env.returned = True
 	return e
 
 def ASSIGN(n): # VAR = EXPR
-	id = run(n['var'])
-	value = run(n['expr'])
+	id = VAR(n['var'])
+	value = EXPR(n['expr'])
 	var = env.find(id)
 	if var:
 		var['value'] = value
@@ -168,7 +170,7 @@ def EXPR(n): # EXPR = BEXPR (if EXPR else EXPR)?
 
 def op2run(a, op, b):
 	# print(f'a={a} op={op} b={b}')
-	if a == -2: error('op2run: exceed!')
+	# if a == -2: error('op2run: exceed!')
 	match op:
 		case '+': return a+b
 		case '-': return a-b
@@ -207,21 +209,21 @@ def BEXPR(n):
 	return opListRun(n)
 
 def LREXPR(n): # LREXPR = ( EXPR )
-	return run(n['expr'])
+	return EXPR(n['expr'])
 
 def LIST(n): # LIST = [ (EXPR ,)* EXPR? ]
 	elist = n['list']
 	rlist = []
 	if len(elist)>0:
 		for expr in elist:
-			rlist.append(run(expr))
+			rlist.append(EXPR(expr))
 	return rlist
 
 def DICT(n):
 	pairs = n['pairs']
 	rdict = {}
 	for pair in pairs:
-		value = run(pair['value'])
+		value = EXPR(pair['value'])
 		rdict[pair['key']] = value
 	return rdict
 
@@ -229,26 +231,26 @@ def TERM(n): # TERM   = OBJ ( [EXPR] | . id | (ARGS) )*
 	global env
 	tlist = n['list']
 	obj = tlist[0]
-	o = run(obj['obj'])
+	o = run(obj['obj']) # 可能直接下降，不能用 OBJ() ...
 	for t in tlist[1:]:
 		op = t['type']
 		if op == 'index':
-			i = run(t['expr'])
+			i = EXPR(t['expr'])
 			o = o[i]
 		elif op == 'member':
 			# emit('.'+t['id'])
 			error('TERM:member not support yet!')
 		elif op == 'call':
-			args = run(t['args'])
+			args = ARGS(t['args'])
 			if isinstance(o, Function):
 				fname = obj['obj']['id']
 				env = Env(o.fname, env)
 				PARAMS(o.node['params'], args) # ccc back
-				run(o.node['block'])
+				BLOCK(o.node['block'])
 				o = env.returnValue
 				env = env.parent
 			else: # Python 本身的函數
-				args = run(t['args'])
+				args = ARGS(t['args'])
 				o = o(*args)
 		else:
 			error(f'term: op = {op} 不合法！')
@@ -264,8 +266,10 @@ def ARGS(n): # ARGS = (EXPR ',')* EXPR? # args
 
 def OBJ(n): # OBJ = id | str | int | float | LREXPR
 	ty = n['type']
+	# print(f'ty={ty} n={n}')
 	match ty:
-		case 'lrexpr': return run(n['expr'])
+		case 'obj': return OBJ(n['obj'])
+		case 'lrexpr': return EXPR(n['expr']) # return run(n['expr'])
 		case 'id': return VAR(n)
 		case 'int': return INT(n)
 		case 'float': return FLOAT(n)
