@@ -16,7 +16,7 @@ class AsmVm(Vm):
 	def __init__(self):
 		super().__init__()
 
-	def emitCode(self):
+	def toCode(self):
 		lines = []
 		for i, code in enumerate(self.emits):
 			lines.append(toAsm(code))

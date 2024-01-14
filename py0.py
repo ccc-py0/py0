@@ -23,16 +23,16 @@ def run(code, lang):
 		case 'cpp':
 			toCode = convert(code, lang, typed=True)
 			cmd = f'g++ -c {toFile} -I ./sys0/'
-		case 'asm':
+		case 'ir':
 			toCode = convert(code, lang, typed=True)
-			cmd = f'echo asm {toFile}'
-		case 'obj':
-			toCode = convert(code, lang, typed=True)
-			cmd = f'echo obj {toFile}'
+			cmd = f'echo ir {toFile}'
+		# case 'obj':
+		#	toCode = convert(code, lang, typed=True)
+		#	cmd = f'echo obj {toFile}'
 	print(f'-------------- {toFile} -----------')
 	print(toCode)
-	if lang != 'obj':
-		lib0.writeTextFile(toFile, toCode)
+	# if lang != 'obj':
+	lib0.writeTextFile(toFile, toCode)
 	if op == 'run':
 		print('---------- run ---------------')
 		os.system(cmd)

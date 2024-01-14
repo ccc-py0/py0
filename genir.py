@@ -1,14 +1,15 @@
 from lib0 import *
 from env import Env
 from genx import GenX
+from ir import IR
 
-class GenVm(GenX):
-	def __init__(self, typed=False, classMap=None, vm=None):
+class GenIR(GenX):
+	def __init__(self, typed=False, classMap=None):
 		super().__init__(typed, classMap)
-		self.vm = vm
+		self.ir = IR()
 
-	def emitCode(self):
-		return self.vm.emitCode()
+	def toCode(self):
+		return self.ir.toCode()
 
 	def STMTS(self, n):
 		for stmt in n['stmts']:
@@ -20,17 +21,17 @@ class GenVm(GenX):
 		self.gen(n['stmt'])
 
 	def IMPORT(self, n):
-		self.vm.include(n["id"])
+		self.ir.include(n["id"])
 
 	def WHILE(self, n):
-		vm = self.vm
-		labelStart = vm.newLabel()
-		labelEnd = vm.newLabel()
-		vm.label(labelStart)
+		ir = self.ir
+		labelStart = ir.newLabel()
+		labelEnd = ir.newLabel()
+		ir.label(labelStart)
 		e = self.gen(n['expr'])
-		vm.jne(e, labelEnd)
+		ir.jne(e, labelEnd)
 		self.gen(n['stmt'])
-		vm.label(labelEnd)
+		ir.label(labelEnd)
 	
 	def FOR(self, n): # FOR = for VAR in EXPR: STMT
 		error('尚未實作')
@@ -44,24 +45,24 @@ class GenVm(GenX):
 	"""
 
 	def IF(self, n):
-		vm = self.vm
+		ir = self.ir
 		e = self.gen(n['expr'])
-		nextLabel = vm.newLabel()
-		vm.jne(e, nextLabel)
+		nextLabel = ir.newLabel()
+		ir.jne(e, nextLabel)
 		self.gen(n['stmt'])
-		vm.label(nextLabel)
+		ir.label(nextLabel)
 		for el in n['elifList']:
 			e = self.gen(el['expr'])
-			nextLabel = vm.newLabel()
-			vm.jne(e, nextLabel)
+			nextLabel = ir.newLabel()
+			ir.jne(e, nextLabel)
 			self.gen(el['stmt'])
-			vm.label(nextLabel)
+			ir.label(nextLabel)
 		if n['elseStmt']:
 			e = self.gen(n['elseStmt'])
 
 	def RETURN(self, n):
 		e = self.gen(n['expr'])
-		self.vm.ret(e)
+		self.ir.ret(e)
 
 	def ASSIGN(self, n):
 		v = self.gen(n['var'])
@@ -74,16 +75,16 @@ class GenVm(GenX):
 			# self.emit(':'+self.mapClass(n['class']))
 
 	def PARAM(self, n):
-		self.vm.param(n['id'])
+		self.ir.param(n['id'])
 		# if self.typed and n['class']:
 		#	self.emit(':'+n['class'])
 
 	def FUNC(self, n):
-		vm = self.vm
-		vm.func(n['id'])
+		ir = self.ir
+		ir.func(n['id'])
 		self.gen(n['params'])
 		self.gen(n['block'])
-		vm.fend()
+		ir.fend()
 
 	def PARAMS(self, n):
 		params = n['params']
@@ -102,7 +103,7 @@ class GenVm(GenX):
 		# (if EXPR else EXPR)? 尚未處理
 
 	def opListGen(self, n):
-		vm = self.vm
+		ir = self.ir
 		list1 = n['list']
 		len1 = len(list1)
 		t1 = self.gen(list1[0])
@@ -110,8 +111,8 @@ class GenVm(GenX):
 		while li + 1 < len1:
 			op = list1[li]
 			e2 = self.gen(list1[li+1])
-			t3 = vm.newTemp()
-			vm.op2(op, t1, e2, t3)
+			t3 = ir.newTemp()
+			ir.op2(op, t1, e2, t3)
 			t1 = t3
 			li += 2
 		return t1
@@ -152,7 +153,7 @@ class GenVm(GenX):
 	"""
 
 	def OBJ(self, n): # OBJ = id | str | int | float | LREXPR
-		vm = self.vm
+		ir = self.ir
 		# print(f'OBJ:n={n}')
 		ty = n['obj']['type']
 		match ty:
@@ -162,7 +163,7 @@ class GenVm(GenX):
 				return n['value']
 			case 'str' | 'int' | 'float':
 				t = self.newTemp()
-				vm.assign(t, n["value"])
+				ir.assign(t, n["value"])
 				return t
 
 	def ARGS(self, n): # ARGS = (EXPR ',')* EXPR? # args
@@ -170,11 +171,11 @@ class GenVm(GenX):
 		if len(args)>0:
 			for arg in args:
 				e = self.gen(arg)
-				self.vm.arg(e)
+				self.ir.arg(e)
 
 
 	def TERM(self, n): # TERM   = OBJ ( [EXPR] | . id | (ARGS) )*
-		vm = self.vm
+		ir = self.ir
 		tlist = n['list']
 		obj = tlist[0]
 		o = self.gen(obj['obj'])
@@ -183,14 +184,14 @@ class GenVm(GenX):
 			if op == 'index':
 				idx = self.gen(t['expr'])
 				tmp = self.newTemp()
-				vm.index(o, idx, tmp)
+				ir.index(o, idx, tmp)
 			elif op == 'member':
 				tmp = self.newTemp()
-				vm.member(o, t['id'], tmp)
+				ir.member(o, t['id'], tmp)
 			elif op == 'call':
 				self.gen(t['args'])
-				tmp = vm.newTemp()
-				vm.call(o, tmp)
+				tmp = ir.newTemp()
+				ir.call(o, tmp)
 			else:
 				error(f'term: op = {op} 不合法！')
 			o = tmp
@@ -207,3 +208,4 @@ class GenVm(GenX):
 
 	def ID(self, n):
 		return n['id']
+

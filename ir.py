@@ -1,15 +1,12 @@
 from lib0 import *
 import json
 
-class Vm:
+class IR:
 	def __init__(self):
 		self.emits = []
 		self.labelMap = {}
 		self.labelId = 0
 		self.tempId = 0
-
-	def emitCode(self):
-		return json.dumps({'code':self.emits, 'labels':self.labels})
 
 	def emit(self, code):
 		i = len(self.emits)
@@ -74,3 +71,25 @@ class Vm:
 	def call(self, f, r):
 		self.emit(['call', f, r])
 	
+	def toCode(self):
+		# return json.dumps({'code':self.emits, 'labels':self.labels})
+		return self.toAsm()
+
+	def toAsm(self):
+		lines = []
+		for i, ir in enumerate(self.emits):
+			lines.append(irToAsm(ir))
+		return '\n'.join(lines)
+
+	def toObj(self):
+		lines = []
+		for i, code in enumerate(self.emits):
+			lines.append(f'{i}:{json.dumps(code)}')
+		return '\n'.join(lines)+'\nlabels='+json.dumps(self.labelMap)
+
+def irToAsm(a):
+	if a[0] == 'label':
+		return f'{a[1]}:'
+	else:
+		r = [str(t) for t in a]
+		return f'  {" ".join(r)}'

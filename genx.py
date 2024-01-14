@@ -187,7 +187,7 @@ class GenX:
 	def indent(self):
 		return '\t'*self.level
 	
-	def emitCode(self):
+	def toCode(self):
 		return ''.join(self.emits)
 	
 	def gen(self, n):
