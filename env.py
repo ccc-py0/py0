@@ -7,8 +7,18 @@ class Env:
 		self.parent = parent
 		self.returnClass = returnClass
 
-	def add(self, name, type):
-		self.vars[name] = type
+	def add(self, name, obj):
+		self.vars[name] = obj
+
+	def findEnv(self, name):
+		if name in self.vars:
+			return self
+		elif self.parent:
+			# print('self=', self)
+			# print('self.parent=', self.parent)
+			return self.parent.findEnv(name)
+		else:
+			return None
 
 	def find(self, name):
 		env = self.findEnv(name)
@@ -21,14 +31,8 @@ class Env:
 		v = self.find(name)
 		return v['class'] if v else None
 
-	def findEnv(self, name):
-		if name in self.vars:
-			return self
-		elif self.parent:
-			return self.parent.findEnv(name)
-		else:
-			return None
-		
 	def __repr__(self):
-		return f'env:name={self.name} parent={self.parent.name} returnClass={self.returnClass}\nvars={json.dumps(self.vars)}'
+		parent = self.parent.name if self.parent else None
+		varsJson = json.dumps(self.vars, default=lambda o: f"<<non-serializable: {type(o).__qualname__}>>")
+		return f'env:name={self.name} parent={parent} returnClass={self.returnClass}\nvars={varsJson}'
 
