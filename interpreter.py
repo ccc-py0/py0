@@ -79,11 +79,7 @@ def run(n):
 		case 'id':
 			return ID(n)
 		case 'var':
-			id = n["id"]
-			isNew = not env.findEnv(id)
-			if isNew:
-				env.add(id, {'class':'?', 'value':None})
-			VAR(n, isNew)
+			return VAR(n)
 		case _:
 			error(n, f'run: type {ty} not found')
 
@@ -127,11 +123,11 @@ def FOR(n): # FOR = for VAR in EXPR: STMT
 	error('尚未實作')
 	"""
 	# emit('for (')
-	id = run(n['var']['id'])
+	id = VAR(n['var']['id'])
 	# emit(' in ')
-	run(n['expr'])
+	EXPR(n['expr'])
 	# emit(')')
-	run(n['stmt'])
+	STMT(n['stmt'])
 	"""
 
 def IF(n):
@@ -156,21 +152,27 @@ def RETURN(n):
 	return e
 
 def ASSIGN(n): # VAR = EXPR
-	id = VAR(n['var'])
+	r = VAR(n['var'])
 	value = EXPR(n['expr'])
+	r['value'] = value
+	"""
 	var = env.find(id)
 	if var:
 		var['value'] = value
+	"""
 
-def VAR(n, isNew):
-	return n['id']
+def VAR(n):
+	id = n["id"]
+	r = env.find(id)
+	if not r:
+		env.add(id, {'class':'?', 'value':None})
+	return r
 
 def EXPR(n): # EXPR = BEXPR (if EXPR else EXPR)?
 	return BEXPR(n)	# (if EXPR else EXPR)? 尚未處理
 
 def op2run(a, op, b):
 	# print(f'a={a} op={op} b={b}')
-	# if a == -2: error('op2run: exceed!')
 	match op:
 		case '+': return a+b
 		case '-': return a-b
@@ -231,7 +233,7 @@ def TERM(n): # TERM   = OBJ ( [EXPR] | . id | (ARGS) )*
 	global env
 	tlist = n['list']
 	obj = tlist[0]
-	o = run(obj['obj']) # 可能直接下降，不能用 OBJ() ...
+	o = OBJ(obj) # run(obj['obj']) # 可能直接下降，不能用 OBJ() ...
 	for t in tlist[1:]:
 		op = t['type']
 		if op == 'index':
@@ -243,7 +245,6 @@ def TERM(n): # TERM   = OBJ ( [EXPR] | . id | (ARGS) )*
 		elif op == 'call':
 			args = ARGS(t['args'])
 			if isinstance(o, Function):
-				fname = obj['obj']['id']
 				env = Env(o.fname, env)
 				PARAMS(o.node['params'], args) # ccc back
 				BLOCK(o.node['block'])
@@ -266,11 +267,10 @@ def ARGS(n): # ARGS = (EXPR ',')* EXPR? # args
 
 def OBJ(n): # OBJ = id | str | int | float | LREXPR
 	ty = n['type']
-	# print(f'ty={ty} n={n}')
 	match ty:
 		case 'obj': return OBJ(n['obj'])
 		case 'lrexpr': return EXPR(n['expr']) # return run(n['expr'])
-		case 'id': return VAR(n)
+		case 'id': return VAR(n)['value']
 		case 'int': return INT(n)
 		case 'float': return FLOAT(n)
 		case 'str': return STR(n)
