@@ -168,9 +168,6 @@ def VAR(n):
 		env.add(id, {'class':'?', 'value':None})
 	return r
 
-def EXPR(n): # EXPR = BEXPR (if EXPR else EXPR)?
-	return BEXPR(n)	# (if EXPR else EXPR)? 尚未處理
-
 def op2run(a, op, b):
 	# print(f'a={a} op={op} b={b}')
 	match op:
@@ -189,26 +186,32 @@ def op2run(a, op, b):
 		case '>': return a>b
 		case _: error(f'op2run: op={op} not found!')
 
-def opListRun(n):
+def opListRun(n, fcall):
 	list1 = n['list']
 	len1 = len(list1)
-	t1 = run(list1[0])
+	t1 = fcall(list1[0])
 	li = 1
 	while li + 1 < len1:
 		op = list1[li]
-		e2 = run(list1[li+1])
+		e2 = fcall(list1[li+1])
 		t1 = op2run(t1, op, e2)
 		li += 2
 	return t1
 
-def MEXPR(n):
-	return opListRun(n)
+def EXPR(n): # EXPR = BEXPR (if EXPR else EXPR)?
+	return BEXPR(n)	# (if EXPR else EXPR)? 尚未處理
 
-def CEXPR(n):
-	return opListRun(n)
+def BEXPR(n): # BEXPR  = CEXPR ((and|or) CEXPR)*
+	return opListRun(n, CEXPR)
 
-def BEXPR(n):
-	return opListRun(n)
+def CEXPR(n): # CEXPR = MEXPR (['==', '!=', '<=', '>=', '<', '>'] MEXPR)*
+	return opListRun(n, MEXPR)
+
+def MEXPR(n): # MEXPR  = ITEM (['+', '-', '*', '/', '%'] ITEM)*
+	return opListRun(n, ITEM)
+
+def ITEM(n): # LIST | DICT | FACTOR
+	return run(n)
 
 def LREXPR(n): # LREXPR = ( EXPR )
 	return EXPR(n['expr'])
@@ -228,6 +231,10 @@ def DICT(n):
 		value = EXPR(pair['value'])
 		rdict[pair['key']] = value
 	return rdict
+
+# FACTOR = (!-~)* TERM
+def FACTOR(n):
+	return TERM(n) # 目前沒處理 (!-~)*
 
 def TERM(n): # TERM   = OBJ ( [EXPR] | . id | (ARGS) )*
 	global env

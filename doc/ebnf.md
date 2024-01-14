@@ -18,11 +18,11 @@ EXPR   = BEXPR (if EXPR else EXPR)?
 BEXPR  = CEXPR ((and|or) CEXPR)*                           # list
 CEXPR  = MEXPR (['==', '!=', '<=', '>=', '<', '>'] MEXPR)* # list
 MEXPR  = ITEM (['+', '-', '*', '/', '%'] ITEM)*            # list
-ITEM   = FACTOR
-FACTOR = float | integer | LREXPR | TERM
-LREXPR = ( EXPR )
+ITEM   = LIST | DICT | FACTOR
+FACTOR = (!-~)* TERM
 TERM   = OBJ ( [EXPR] | . id | (ARGS) )*
 OBJ    = id | string | int | float | LREXPR
+LREXPR = ( EXPR )
 CALL   = id(ARGS)
 ARGS   = (EXPR ,)* EXPR?
 ARRAY  = [ (EXPR ,)* EXPR? ]

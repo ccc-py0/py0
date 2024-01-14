@@ -256,7 +256,8 @@ def BEXPR():
 		op = next()
 		e = CEXPR()
 		elist.extend([op, e])
-	return e if len(elist)==1 else {'type':'bexpr', 'class':'bool', 'list':elist}
+	rClass = e['class'] if len(elist) <= 1 else 'bool'
+	return {'type':'bexpr', 'class':rClass, 'list':elist}
 
 # CEXPR = MEXPR (['==', '!=', '<=', '>=', '<', '>'] MEXPR)*
 def CEXPR():
@@ -266,7 +267,8 @@ def CEXPR():
 		op = next()
 		e = MEXPR()
 		elist.extend([op, e])
-	return e if len(elist)==1 else {'type':'cexpr', 'class':'bool', 'list':elist}
+	rClass = e['class'] if len(elist) <= 1 else 'bool'
+	return {'type':'cexpr', 'class':rClass, 'list':elist}
 
 # MEXPR = ITEM (['+', '-', '*', '/', '%'] ITEM)*
 def MEXPR():
@@ -276,7 +278,8 @@ def MEXPR():
 		op = next()
 		e = ITEM()
 		elist.extend([op,e])
-	return e if len(elist)==1 else {'type':'mexpr', 'class': e['class'], 'list':elist}
+	# return e if len(elist)==1 else {'type':'mexpr', 'class': e['class'], 'list':elist} # ccc
+	return {'type':'mexpr', 'class': e['class'], 'list':elist}
 
 # ITEM = LIST | DICT | FACTOR
 def ITEM():
