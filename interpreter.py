@@ -6,11 +6,16 @@ def error(n, msg):
 	print(f'Error: node {n}\n{msg}')
 	raise Exception('interpereter:error')
 
-env = None
+def globalEnv():
+	env = Env('global', None)
+	env.vars = {
+		'print':print
+	}
+	return env
 
 def run(n):
 	global env
-	env = Env('global', None)
+	env = globalEnv()
 	t = n['type']
 	match t:
 		case 'stmts':
@@ -176,10 +181,7 @@ def opListRun(n):
 	while li + 1 < len1:
 		op = list1[li]
 		e2 = run(list1[li+1])
-		t3 = op2run(t1, op, e2)
-		# t3 = ir.newTemp()
-		# ir.op2(op, t1, e2, t3)
-		t1 = t3
+		t1 = op2run(t1, op, e2)
 		li += 2
 	return t1
 
@@ -211,17 +213,6 @@ def DICT(n):
 		rdict[pair['key']] = value
 	return rdict
 
-def OBJ(n): # OBJ = id | str | int | float | LREXPR
-	ty = n['type']
-	value = n['value']
-	match ty:
-		case 'lrexpr': return run(n['expr'])
-		case 'id': return VAR(n)
-		case 'int': return INT(n)
-		case 'float': return FLOAT(n)
-		case 'str': return STR(n)
-		case _: error(f'OBJ:type error, type={ty} unknown')
-
 def TERM(n): # TERM   = OBJ ( [EXPR] | . id | (ARGS) )*
 	tlist = n['list']
 	obj = tlist[0]
@@ -230,23 +221,38 @@ def TERM(n): # TERM   = OBJ ( [EXPR] | . id | (ARGS) )*
 		op = t['type']
 		if op == 'index':
 			i = run(t['expr'])
-			return o[i]
+			o = o[i]
 		elif op == 'member':
 			# emit('.'+t['id'])
 			error('TERM:member not support yet!')
 		elif op == 'call':
 			args = run(t['args'])
-			return o(args)
+			print(f'o={o} call {args}')
+			o = o(*args)
 		else:
 			error(f'term: op = {op} 不合法！')
+	return o
 
 def ARGS(n): # ARGS = (EXPR ',')* EXPR? # args
 	args = n['args']
+	print(f'ARGS:args={args}')
 	rlist = []
 	if len(args)>0:
 		for arg in args:
 			rlist.append(run(arg))
 	return rlist
+
+def OBJ(n): # OBJ = id | str | int | float | LREXPR
+	ty = n['type']
+	value = n['value']
+	print(f'OBJ:n={n}')
+	match ty:
+		case 'lrexpr': return run(n['expr'])
+		case 'id': return VAR(n)
+		case 'int': return INT(n)
+		case 'float': return FLOAT(n)
+		case 'str': return STR(n)
+		case _: error(f'OBJ:type error, type={ty} unknown')
 
 def FLOAT(n):
 	return float(n['value'])
@@ -255,11 +261,12 @@ def INT(n):
 	return int(n['value'])
 
 def STR(n):
-	return n['value'].substr(1, -1)
+	return n['value'][1:-1]
 
 def ID(n):
-	return env.find(n['id'])['value']
-
+	print('ID: n=', n)
+	return env.find(n['id'])
+	
 # 測試詞彙掃描器
 if __name__ == "__main__":
 	from test0 import code
