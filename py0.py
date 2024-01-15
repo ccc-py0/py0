@@ -4,6 +4,7 @@ from converter import convert
 import lib0
 from lexer0 import *
 from parser0 import *
+from interpreter import interpret
 
 def excepthook(type, value, traceback):
     print(value)
@@ -29,13 +30,19 @@ def run(code, lang):
 		case 'irobj':
 			toCode = convert(code, lang)
 			cmd = f'echo ir {toFile}'
+		case 'py0':
+			toCode = code
+		case _:
+			error(f'run():lang = {lang} not support')
 	print(f'-------------- {toFile} -----------')
 	print(toCode)
-	# if lang != 'obj':
-	lib0.writeTextFile(toFile, toCode)
-	if op == 'run':
-		print('---------- run ---------------')
-		os.system(cmd)
+	print('---------- run ---------------')
+	if lang == 'py0':
+		interpret(toCode)
+	else:
+		lib0.writeTextFile(toFile, toCode)
+		if op == 'run':
+			os.system(cmd)
 
 
 sys.path.append('sys')

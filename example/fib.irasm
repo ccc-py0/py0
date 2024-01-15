@@ -15,3 +15,8 @@ L0:
   + T4 T6 T7
   ret T7
   fend
+  arg 'fib(5)='
+  arg 5
+  call fib T8
+  arg T8
+  call print T9

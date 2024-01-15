@@ -15,7 +15,7 @@ PARAMS = PARAM*                                           # list
 PARAM  = id
 BLOCK  = begin STMTS end
 EXPR   = BEXPR (if EXPR else EXPR)?
-BEXPR  = CEXPR ((and|or) CEXPR)*                           # list
+BEXPR  = CEXPR ((and|or) CEXPR)*  # list
 CEXPR  = MEXPR (['==', '!=', '<=', '>=', '<', '>'] MEXPR)* # list
 MEXPR  = ITEM (['+', '-', '*', '/', '%'] ITEM)*            # list
 ITEM   = LIST | DICT | FACTOR
@@ -28,5 +28,5 @@ ARGS   = (EXPR ,)* EXPR?
 ARRAY  = [ (EXPR ,)* EXPR? ]
 DICT   = { (PAIR ,)* PAIR? }
 PAIR   = string : EXPR
-VAR    = id
+VAR    = id (:id)?
 ```

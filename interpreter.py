@@ -22,104 +22,83 @@ def error(n, msg):
 	print(f'Error: \n{msg}')
 	raise Exception('interpereter:error')
 
-def run(n):
-	global env
-	ty = n['type']
-	match ty:
-		case 'stmts':
-			STMTS(n)
-		case 'expr':
-			return EXPR(n)
-		case 'mexpr':
-			return MEXPR(n)
-		case 'cexpr':
-			return CEXPR(n)
-		case 'bexpr':
-			return BEXPR(n)
-		case 'stmt':
-			STMT(n)
-		case 'import':
-			IMPORT(n)
-		case 'while':
-			WHILE(n)
-		case 'for':
-			FOR(n)
-		case 'if':
-			IF(n)
-		case 'return':
-			RETURN(n)
-		case 'assign':
-			ASSIGN(n)
-		case 'func': # def id(PARAMS): BLOCK
-			FUNC(n)
-		case 'params':
-			PARAMS(n)
-		case 'param':
-			PARAM(n)
-		case 'block':
-			BLOCK(n)
-		case 'lrexpr': 
-			return LREXPR(n)
-		case 'list':
-			return LIST(n)
-		case 'dict':
-			return DICT(n)
-		case 'obj':
-			return OBJ(n)
-		case 'term':
-			return TERM(n)
-		case 'args': 
-			return ARGS(n)
-		case 'float':
-			return FLOAT(n)
-		case 'int':
-			return INT(n)
-		case 'str':
-			return STR(n)
-		case 'id':
-			return ID(n)
-		case 'var':
-			return VAR(n)
-		case _:
-			error(n, f'run: type {ty} not found')
+def interpret(code):
+	ast = parse(code)
+	run(ast)
 
+def run(n):
+	match n['type']:
+		case 'stmts': STMTS(n)
+		case 'expr':  return EXPR(n)
+		case 'mexpr': return MEXPR(n)
+		case 'cexpr': return CEXPR(n)
+		case 'bexpr': return BEXPR(n)
+		case 'stmt':  STMT(n)
+		case 'import':IMPORT(n)
+		case 'while': WHILE(n)
+		case 'for': FOR(n)
+		case 'if': IF(n)
+		case 'return': RETURN(n)
+		case 'assign': ASSIGN(n)
+		case 'func': FUNC(n)
+		case 'params': PARAMS(n)
+		case 'param': PARAM(n)
+		case 'block': BLOCK(n)
+		case 'lrexpr': return LREXPR(n)
+		case 'list': return LIST(n)
+		case 'dict': return DICT(n)
+		case 'obj': return OBJ(n)
+		case 'term': return TERM(n)
+		case 'args': return ARGS(n)
+		case 'float': return FLOAT(n)
+		case 'int': return INT(n)
+		case 'str': return STR(n)
+		case 'id': return ID(n)
+		case 'var': return VAR(n)
+		case _: error(n, f'run: type {ty} not found')
+
+# STMTS  = STMT* 
 def STMTS(n):
 	# print('STMTS:env=', env)
 	for stmt in n['stmts']:
 		if env.returned: break
 		STMT(stmt)
 
+ # STMT = BLOCK | FUNC | IF | WHILE | RETURN | ASSIGN | CALL | IMPORT
 def STMT(n):
 	run(n['stmt'])
 
+# FUNC = def id(PARAMS): BLOCK
 def FUNC(n):
 	fname = n['id']
 	f = Function(fname, n, env)
 	env.add(fname, {'class':'func', 'value':f})
 
+# PARAMS = PARAM*
 def PARAMS(n, args):
 	params = n['params']
 	for i, param in enumerate(params):
 		env.add(param['id'], {'class':'?', 'value':args[i]})
-		# PARAM(param)
 
-# def PARAM(n):
-
-def BLOCK(n): # BLOCK  = begin STMTS end
+# BLOCK  = begin STMTS end
+def BLOCK(n):
 	global level
 	level += 1
 	STMTS(n['stmts'])
 	level -= 1
 
+# IMPORT = import id
 def IMPORT(n):
 	error('尚未實作')
 	# emit(f'import {n["id"]}')
 
+# WHILE  = while EXPR: STMT
 def WHILE(n):
 	while EXPR(n['expr']):
 		STMT(n['stmt'])
 
-def FOR(n): # FOR = for VAR in EXPR: STMT
+# FOR = for VAR in EXPR: STMT
+def FOR(n):
 	error('尚未實作')
 	"""
 	# emit('for (')
@@ -130,6 +109,7 @@ def FOR(n): # FOR = for VAR in EXPR: STMT
 	STMT(n['stmt'])
 	"""
 
+# IF = if EXPR: STMT (elif STMT)* (else STMT)?
 def IF(n):
 	e = EXPR(n['expr'])
 	# print('IF:e=',e)
@@ -142,25 +122,20 @@ def IF(n):
 		if n['elseStmt']:
 			STMT(n['elseStmt'])
 
+# RETURN = return EXPR
 def RETURN(n):
-	# print('RETURN n=', n)
-	# e = run(n['expr'])
 	e = EXPR(n['expr'])
-	# print('return ', e)
 	env.returnValue = e
 	env.returned = True
 	return e
 
-def ASSIGN(n): # VAR = EXPR
+# ASSIGN = VAR = EXPR
+def ASSIGN(n):
 	r = VAR(n['var'])
 	value = EXPR(n['expr'])
 	r['value'] = value
-	"""
-	var = env.find(id)
-	if var:
-		var['value'] = value
-	"""
 
+# VAR = id (:id)?
 def VAR(n):
 	id = n["id"]
 	r = env.find(id)
@@ -186,30 +161,37 @@ def op2run(a, op, b):
 		case '>': return a>b
 		case _: error(f'op2run: op={op} not found!')
 
-def opListRun(n, fcall):
+def opListRun(n, ty):
+	if n['type'] != ty:
+		return run(n)
 	list1 = n['list']
 	len1 = len(list1)
-	t1 = fcall(list1[0])
+	t1 = run(list1[0])
 	li = 1
 	while li + 1 < len1:
 		op = list1[li]
-		e2 = fcall(list1[li+1])
+		e2 = run(list1[li+1])
 		t1 = op2run(t1, op, e2)
 		li += 2
 	return t1
 
-def EXPR(n): # EXPR = BEXPR (if EXPR else EXPR)?
+# EXPR = BEXPR (if EXPR else EXPR)?
+def EXPR(n):
 	return BEXPR(n)	# (if EXPR else EXPR)? 尚未處理
 
-def BEXPR(n): # BEXPR  = CEXPR ((and|or) CEXPR)*
-	return opListRun(n, CEXPR)
+# BEXPR  = CEXPR ((and|or) CEXPR)*
+def BEXPR(n):
+	return opListRun(n, 'bexpr')
 
-def CEXPR(n): # CEXPR = MEXPR (['==', '!=', '<=', '>=', '<', '>'] MEXPR)*
-	return opListRun(n, MEXPR)
+# CEXPR = MEXPR (['==', '!=', '<=', '>=', '<', '>'] MEXPR)*
+def CEXPR(n):
+	return opListRun(n, 'cexpr')
 
-def MEXPR(n): # MEXPR  = ITEM (['+', '-', '*', '/', '%'] ITEM)*
-	return opListRun(n, ITEM)
+# MEXPR = ITEM (['+', '-', '*', '/', '%'] ITEM)*
+def MEXPR(n):
+	return opListRun(n, 'mexpr')
 
+# ITEM = LIST | DICT | FACTOR
 def ITEM(n): # LIST | DICT | FACTOR
 	return run(n)
 
@@ -269,19 +251,14 @@ def ARGS(n): # ARGS = (EXPR ',')* EXPR? # args
 	rlist = []
 	if len(args)>0:
 		for arg in args:
-			rlist.append(run(arg))
+			rlist.append(EXPR(arg))
 	return rlist
 
 def OBJ(n): # OBJ = id | str | int | float | LREXPR
-	ty = n['type']
-	match ty:
-		case 'obj': return OBJ(n['obj'])
-		case 'lrexpr': return EXPR(n['expr']) # return run(n['expr'])
-		case 'id': return VAR(n)['value']
-		case 'int': return INT(n)
-		case 'float': return FLOAT(n)
-		case 'str': return STR(n)
-		case _: error(f'OBJ:type error, type={ty} unknown')
+	if n['type'] == 'obj': # OBJ
+		return OBJ(n['obj'])
+	else: # str | int | float | LREXPR
+		return run(n)
 
 def FLOAT(n):
 	return float(n['value'])
