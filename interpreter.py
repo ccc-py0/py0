@@ -31,6 +31,7 @@ def run(n):
 		case 'stmts': STMTS(n)
 		case 'expr':  return EXPR(n)
 		case 'mexpr': return MEXPR(n)
+		case 'nexpr': return NEXPR(n)
 		case 'cexpr': return CEXPR(n)
 		case 'bexpr': return BEXPR(n)
 		case 'stmt':  STMT(n)
@@ -89,7 +90,9 @@ def BLOCK(n):
 
 # IMPORT = import id
 def IMPORT(n):
-	error('尚未實作')
+	pass
+	# print('# import 尚未實作')
+	# error('尚未實作')
 	# emit(f'import {n["id"]}')
 
 # WHILE  = while EXPR: STMT
@@ -188,9 +191,13 @@ def BEXPR(n):
 def CEXPR(n):
 	return opListRun(n, 'cexpr')
 
-# MEXPR = ITEM (['+', '-', '*', '/', '%'] ITEM)*
+# MEXPR = NEXPR (['+', '-'] NEXPR)*
 def MEXPR(n):
 	return opListRun(n, 'mexpr')
+
+# NEXPR = ITEM (['*', '/', '%'] ITEM)*
+def NEXPR(n):
+	return opListRun(n, 'nexpr')
 
 # ITEM = LIST | DICT | FACTOR
 def ITEM(n): # LIST | DICT | FACTOR

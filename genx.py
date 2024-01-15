@@ -104,6 +104,9 @@ class GenX:
 			else:
 				self.gen(e)
 
+	def NEXPR(self, n):
+		self.MEXPR(n)
+
 	def CEXPR(self, n):
 		self.MEXPR(n)
 
@@ -228,6 +231,8 @@ class GenX:
 				return self.EXPR(n)
 			case 'mexpr':
 				return self.MEXPR(n)
+			case 'nexpr':
+				return self.NEXPR(n)
 			case 'cexpr':
 				return self.CEXPR(n)
 			case 'bexpr':
@@ -258,3 +263,4 @@ class GenX:
 				if isNew:
 					self.env.add(id, {'class':'?'})
 				self.VAR(n, isNew)
+			case _: error(f'run(): type {t} not found!')

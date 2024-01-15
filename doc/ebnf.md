@@ -17,7 +17,9 @@ BLOCK  = begin STMTS end
 EXPR   = BEXPR (if EXPR else EXPR)?
 BEXPR  = CEXPR ((and|or) CEXPR)*  # list
 CEXPR  = MEXPR (['==', '!=', '<=', '>=', '<', '>'] MEXPR)* # list
-MEXPR  = ITEM (['+', '-', '*', '/', '%'] ITEM)*            # list
+MEXPR = NEXPR (['+', '-'] NEXPR)*
+NEXPR = ITEM (['*', '/', '%'] ITEM)*
+*            # list
 ITEM   = LIST | DICT | FACTOR
 FACTOR = (!-~)* TERM
 TERM   = OBJ ( [EXPR] | . id | (ARGS) )*

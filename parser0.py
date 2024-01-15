@@ -272,17 +272,27 @@ def CEXPR():
 
 	return e if len(elist)==1 else {'type':'cexpr', 'class': 'bool', 'list':elist}
 
-# MEXPR = ITEM (['+', '-', '*', '/', '%'] ITEM)*
+# MEXPR = NEXPR (['+', '-'] NEXPR)*
 def MEXPR():
+	e = NEXPR()
+	elist = [e]
+	while isNextSet(['+', '-']):
+		op = next()
+		e = NEXPR()
+		elist.extend([op,e])
+		
+	return e if len(elist)==1 else {'type':'mexpr', 'class': e['class'], 'list':elist}
+
+# NEXPR = ITEM (['*', '/', '%'] ITEM)*
+def NEXPR():
 	e = ITEM()
 	elist = [e]
-	while isNextSet(['+', '-', '*', '/', '%']):
+	while isNextSet(['*', '/', '%']):
 		op = next()
 		e = ITEM()
 		elist.extend([op,e])
 		
-	return e if len(elist)==1 else {'type':'mexpr', 'class': e['class'], 'list':elist}
-	# return {'type':'mexpr', 'class': e['class'], 'list':elist}
+	return e if len(elist)==1 else {'type':'nexpr', 'class': e['class'], 'list':elist}
 
 # ITEM = LIST | DICT | FACTOR
 def ITEM():
