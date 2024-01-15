@@ -178,7 +178,7 @@ class GenIR(GenX):
 		ir = self.ir
 		tlist = n['list']
 		obj = tlist[0]
-		o = self.gen(obj['obj'])
+		o = self.gen(obj) # self.gen(obj['obj'])
 		for t in tlist[1:]:
 			op = t['type']
 			if op == 'index':

@@ -366,7 +366,7 @@ def OBJ():
 		obj = {'type':'lrexpr', 'class':e['class'], 'expr':e}
 	else:
 		error(f'OBJ:type={ty} 錯誤！')
-	return {'type':'obj', 'class':obj['class'], 'obj':obj }
+	return obj
 
 # array = [ expr* ]
 

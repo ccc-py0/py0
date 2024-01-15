@@ -55,7 +55,7 @@ def run(n):
 		case 'str': return STR(n)
 		case 'id': return ID(n)
 		case 'var': return VAR(n)
-		case _: error(n, f'run: type {ty} not found')
+		case _: error(n, f'run: type {n["type"]} not found')
 
 # STMTS  = STMT* 
 def STMTS(n):
@@ -257,7 +257,7 @@ def ARGS(n): # ARGS = (EXPR ',')* EXPR? # args
 def OBJ(n): # OBJ = id | str | int | float | LREXPR
 	if n['type'] == 'obj': # OBJ
 		return OBJ(n['obj'])
-	else: # str | int | float | LREXPR
+	else: # 沒經過 OBJ 直接下降 (n 不是 OBJ)
 		return run(n)
 
 def FLOAT(n):

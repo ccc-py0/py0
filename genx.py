@@ -145,7 +145,7 @@ class GenX:
 	def TERM(self, n): # TERM   = OBJ ( [EXPR] | . id | (ARGS) )*
 		tlist = n['list']
 		obj = tlist[0]
-		self.gen(obj['obj'])
+		self.gen(obj)
 		for t in tlist[1:]:
 			op = t['type']
 			if op == 'index':
