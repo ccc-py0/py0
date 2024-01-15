@@ -1,0 +1,9 @@
+def power(a,n):
+	r = 1
+	i = 0
+	while i<n:
+		r = r * a
+		i = i+1
+	return r
+
+print('power(2,3)=', power(2,3))

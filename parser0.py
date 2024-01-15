@@ -214,6 +214,8 @@ def PARAMS():
 	while not isNext(")"):
 		p = PARAM()
 		params.append(p)
+		if isNext(','):
+			next(',')
 	return {'type':'params', 'params':params}
 
 # PARAM = id

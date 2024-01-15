@@ -140,7 +140,8 @@ def VAR(n):
 	id = n["id"]
 	r = env.find(id)
 	if not r:
-		env.add(id, {'class':'?', 'value':None})
+		r = {'class':'?', 'value':None}
+		env.add(id, r)
 	return r
 
 def op2run(a, op, b):
