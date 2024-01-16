@@ -1,8 +1,9 @@
 set -x
 
-python py0.py run example/muladd.py0 py0
-python py0.py run example/muladd.py0 py
-python py0.py run example/muladd.py0 js
+python py0.py convert example/fib.py0 ir.ll
+# python py0.py run example/muladd.py0 py0
+# python py0.py run example/muladd.py0 py
+# python py0.py run example/muladd.py0 js
 # python py0.py convert example/muladd.py0 cpp
 
 # python py0.py run example/power.py0 py0

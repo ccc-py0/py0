@@ -26,10 +26,13 @@ def run(code, lang):
 			cmd = f'g++ -c {toFile} -I ./sys0/'
 		case 'irasm':
 			toCode = convert(code, lang)
-			cmd = f'echo ir {toFile}'
+			cmd = f'echo irasm {toFile}'
 		case 'irobj':
 			toCode = convert(code, lang)
-			cmd = f'echo ir {toFile}'
+			cmd = f'echo irobj {toFile}'
+		case 'ir.ll':
+			toCode = convert(code, lang)
+			cmd = f'echo ir.ll {toFile}'
 		case 'py0':
 			toCode = code
 		case _:

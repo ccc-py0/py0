@@ -1,4 +1,5 @@
 from lib0 import *
+import llvm
 import json
 
 class IR:
@@ -74,10 +75,11 @@ class IR:
 	
 	def toCode(self):
 		# return json.dumps({'code':self.emits, 'labels':self.labels})
-		if self.mode == 'irasm':
-			return self.toAsm()
-		else:
-			return self.toObj()
+		match self.mode:
+			case 'irasm': return self.toAsm()
+			case 'irobj': return self.toObj()
+			case 'ir.ll': return self.toLlvm()
+			case _: error('ir:toCode mode={self.mode} not support')
 
 	def toAsm(self):
 		lines = []
@@ -90,6 +92,9 @@ class IR:
 		for i, code in enumerate(self.emits):
 			lines.append(f'{i}:{json.dumps(code)}')
 		return '\n'.join(lines)+'\nlabels='+json.dumps(self.labelMap)
+
+	def toLlvm(self):
+		return llvm.ir2llvm(self)
 
 def irToAsm(a):
 	if a[0] == 'label':
