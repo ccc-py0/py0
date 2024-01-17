@@ -39,20 +39,20 @@ def ir2llvm(ir):
 					opx, a1, a2 = e[0:3]
 					if opx != 'param':
 						break
-					params.append(f'{a2} {a1}')
+					params.append(f'{a2} %{a1}')
 					ei += 1
-				r = f'define dso_local i32 {fname}({",".join(params)}) #0 '+'{'
+				r = f'define dso_local i32 @{fname}({",".join(params)}) #0 '+'{'
 				print('r=', r)
 			case 'fend':
 				r = '}'
 			case 'label':
-				r = f'{a1[1:]}:'
+				r = f'{a1}:'
 			case 'jeq':
-				r = f' br i1 ??, label %{a1[1:]}' # ???
+				r = f' br i1 ??, label %{a1}' # ???
 			case 'jne':
-				r = f' br i1 ??, label {a1}' # ???
+				r = f' br i1 ??, label %{a1}' # ???
 			case 'ret':
-				r = f' ret i32 {a1}'
+				r = f' ret i32 %{a1}'
 			case 'assign':
 				r = f' store i32 {a1} {a2}'
 			case 'arg':
@@ -70,7 +70,7 @@ def ir2llvm(ir):
 			case _:
 				if op in bopMap:
 					llop = bopMap[op]
-					r = f' {a3} = {llop} {a1} {a2}'
+					r = f' %{a3} = {llop} i32 %{a1}, %{a2}'
 				else:
 					error(f'{op} ???, ei={ei}')
 		ei += 1
@@ -78,6 +78,13 @@ def ir2llvm(ir):
 	return '\n'.join(lines)
 
 #	return '\n'.join(lines)+'\nlabels='+json.dumps(ir.labelMap)
+
+"""
+define dso_local i32 @add(i32 %a, i32 %b) #0 {
+  %T1 = add i32 %a, %b
+  ret i32 %T1
+}
+"""
 
 """
 ; ModuleID = 'fib.c'

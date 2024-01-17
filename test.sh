@@ -1,7 +1,7 @@
 set -x
 
-python py0.py convert example/fib.py0 irasm
-python py0.py convert example/fib.py0 ir.ll
+# python py0.py convert example/fib.py0 irasm
+python py0.py convert example/add/add.py0 ir.ll
 # python py0.py run example/muladd.py0 py0
 # python py0.py run example/muladd.py0 py
 # python py0.py run example/muladd.py0 js
