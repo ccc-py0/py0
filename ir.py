@@ -70,8 +70,10 @@ class IR:
 	def member(self, o, key, r):
 		self.emit(['member', o, key, r])
 
-	def call(self, f, r):
-		self.emit(['call', f, r])
+	def call(self, f, args, r):
+		# print(f'call {f} {len(args)}')
+		# print(f'   args=', args)
+		self.emit(['call', f, len(args), r])
 	
 	def toCode(self):
 		# return json.dumps({'code':self.emits, 'labels':self.labels})

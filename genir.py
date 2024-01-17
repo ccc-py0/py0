@@ -189,9 +189,9 @@ class GenIR(GenX):
 				tmp = self.newTemp()
 				ir.member(o, t['id'], tmp)
 			elif op == 'call':
-				self.gen(t['args'])
+				self.gen(t['args']) # t['args'] 是 node
 				tmp = ir.newTemp()
-				ir.call(o, tmp)
+				ir.call(o, t['args']['args'], tmp) # t['args']['args'] 是 list
 			else:
 				error(f'term: op = {op} 不合法！')
 			o = tmp
